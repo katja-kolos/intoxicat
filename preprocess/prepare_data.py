@@ -1,5 +1,6 @@
 import pandas as pd
 import sys, json, os
+from sklearn.model_selection import train_test_split
 
 
 def create_file_wrapper(path, features, what_type, out_name, meta_data=None):
@@ -122,6 +123,33 @@ def gather_phonetic_transcription(annotation_dict, file_annotations, file_path):
     return file_annotations
 
 
+def create_toy_dataset(annotation_file, feature_files):
+
+    df = pd.read_json(annotation_file, orient='index')
+    train, test = train_test_split(df, test_size=0.01)
+
+    print(len(test))
+    print(test.columns)
+    # for test_el in test:
+    #     print(test_el)
+    audio_files = [os.path.join(row['path'], row['annotates']) for index, row in testrm .iterrows()]
+
+    for feature_file in feature_files:
+        with open(feature_file, 'r') as ff:
+            features = json.load(ff)
+        feature_dict = {}
+        print('Number of Audio Files: {}'.format(len(audio_files)))
+        for i, audio_file in enumerate(audio_files):
+            feature_dict[audio_file] = features[audio_file]
+
+            if i % 100 == 0:
+                print(i)
+
+        new_name = feature_file[:-5] + '_toy.json'
+        with open(new_name, 'w') as ff:
+            json.dump(feature_dict, ff)
+
+
 if __name__ == "__main__":
 
     # command:
@@ -140,7 +168,9 @@ if __name__ == "__main__":
     # <meta_name>:          list of meta feature names, seperated by commas
     # possible features:    'utterance,utt,spn,o_utt,item,o_item,alc,sex,age,acc,drh,aak,bak,ges,ces,wea,irreg,anncom,specom,type,content'       
 
-    try:
-        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
-    except IndexError:
-        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    # try:
+    #     create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+    # except IndexError:
+    #     create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+
+    create_toy_dataset('../data/meta_data_annotation_all_features_220523.json', ['../../preprocess/ALC_features_Functional.json', '../../preprocess/ALC_features_LLD.json'])
