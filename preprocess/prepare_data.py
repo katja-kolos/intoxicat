@@ -168,9 +168,9 @@ if __name__ == "__main__":
     # <meta_name>:          list of meta feature names, seperated by commas
     # possible features:    'utterance,utt,spn,o_utt,item,o_item,alc,sex,age,acc,drh,aak,bak,ges,ces,wea,irreg,anncom,specom,type,content'       
 
-    # try:
-    #     create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
-    # except IndexError:
-    #     create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    try:
+        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+    except IndexError:
+        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 
-    create_toy_dataset('../data/meta_data_annotation_all_features_220523.json', ['../../preprocess/ALC_features_Functional.json', '../../preprocess/ALC_features_LLD.json'])
+    # create_toy_dataset('../data/meta_data_annotation_all_features_220523.json', ['../../preprocess/ALC_features_Functional.json', '../../preprocess/ALC_features_LLD.json'])
