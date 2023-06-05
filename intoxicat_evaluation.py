@@ -30,12 +30,6 @@ def calculate_f1(ground_truth_labels, predicted_labels):
   return f1
 
 # what I wanted to do here is checking everytime there's "alc" assign "a" as intox and "na" as not_intox
-# does it make sense? 
-
-document = # how to refer to the docs where alc results are? 
-
-# Split the document into a list of words
-alc_results = document.split()
 
 for result in alc_results:
   
