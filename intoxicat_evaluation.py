@@ -5,9 +5,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 ground_truth_labels = ["a", "na"]
 predicted_labels = ["a", "na"]
 
-# what I wanted to do here is checking everytime there's "alc" assign "a" as intox and "na" as not_intox
-# does it make sense? 
-
 def calculate_accuracy(ground_truth_labels, predicted_labels):
   # Accuracy
   accuracy = accuracy_score(ground_truth_labels, predicted_labels)
@@ -31,3 +28,26 @@ def calculate_f1(ground_truth_labels, predicted_labels):
   f1 = f1_score(ground_truth_labels, predicted_labels)
   print("F1: ", f1)
   return f1
+
+# what I wanted to do here is checking everytime there's "alc" assign "a" as intox and "na" as not_intox
+# does it make sense? 
+
+document = # how to refer to the docs where alc results are? 
+
+# Split the document into a list of words
+alc_results = document.split()
+
+for result in alc_results:
+  
+   # Check if the word contains "alc"
+    if "alc" in alc_results:
+      
+        # Assign the appropriate label based on the word
+        if result == "a":
+            label = "intoxicated"
+            
+        elif result == "na"
+            label = "not intoxicated"
+          
+        # Print the word and its corresponding label
+        print(result, label)
