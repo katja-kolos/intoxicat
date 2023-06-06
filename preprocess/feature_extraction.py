@@ -1,9 +1,10 @@
-import os, json
+import os, json, sys
 import parselmouth
 import audiofile
 import opensmile
 import numpy as np
 
+sys.path.append('..')
 from basics import read_json
 
 
@@ -41,10 +42,6 @@ def extract_features(audiofile):
     return features
 
 
-# def extract_all(folder):
-
-
-
 def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_name):
 
     json_lld = {}
@@ -54,6 +51,7 @@ def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_
     # acces every file
     for file, meta_data in annotation_file.items():
 
+        print(file)
         audio_file = meta_data['annotates']
         path = meta_data['path']
         path_to_file = os.path.join(path, audio_file)
@@ -114,7 +112,4 @@ def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_
 
 if __name__ == "__main__":
 
-    extract_features_opensmile('/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/data/RAVDESS/', 'RAVDESS_features_LLD.json', 'RAVDESS_features_Functional.json')
-
-
-# features = extract_features('/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/data/RAVDESS/Actor_01/03-01-01-01-01-01-01.wav')
+    extract_features_opensmile('../data/meta_data_annotation_all_features_050623.json', 'ALC_features_LLD.json', 'ALC_features_Functional.json')
