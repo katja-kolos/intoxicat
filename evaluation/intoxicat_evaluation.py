@@ -29,19 +29,24 @@ def calculate_f1(ground_truth_labels, predicted_labels):
   print("F1: ", f1)
   return f1
 
-# what I wanted to do here is checking everytime there's "alc" assign "a" as intox and "na" as not_intox
+def make_labels_human_readable(alc_results):
+  human_read_list = []
 
-for result in alc_results:
-  
-   # Check if the word contains "alc"
-    if "alc" in alc_results:
-      
-        # Assign the appropriate label based on the word
-        if result == "a":
-            label = "intoxicated"
-            
-        elif result == "na"
-            label = "not intoxicated"
+  for result in alc_results:
+
+     # Check if the word contains "alc"
+      if "alc" in alc_results:
+
+          # Assign the appropriate label based on the word
+          if result == "a":
+              label = "intoxicated"
+
+          elif result == "na"
+              label = "not intoxicated"
+
+          else:
+              label = "not intoxicated (c)"
+
+          human_read_list.append(label)
           
-        # Print the word and its corresponding label
-        print(result, label)
+  return human_read_list
