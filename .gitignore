@@ -1,0 +1,5 @@
+#ignore the old notebooks I keep for myself as a reference
+*_old*
+
+#ignore ipynb checkpoints
+.ipynb_checkpoints
