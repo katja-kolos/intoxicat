@@ -2,8 +2,8 @@ import numpy as numpy
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # How intoxication is labeled 
-ground_truth_labels = ["a", "na"]
-predicted_labels = ["a", "na"]
+# ground_truth_labels = ["a", "na", "cna"]
+# predicted_labels = ["a", "na", "cna"]
 
 def calculate_accuracy(ground_truth_labels, predicted_labels):
   # Accuracy
