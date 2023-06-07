@@ -131,9 +131,9 @@ class LSTM_Model(nn.Module):
         # initialise LSTM architecture
         self.lstm = torch.nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
         # map last hidden layer to intermediate layer before output layer
-        self.fully_connected = torch.nn.Linear(self.hidden_size, 128)
+        self.fully_connected = torch.nn.Linear(self.hidden_size, 32)
         # map intermediate layer to output layer
-        self.output_layer = torch.nn.Linear(128, self.num_classes)
+        self.output_layer = torch.nn.Linear(32, self.num_classes)
 
         # define a relu function
         self.relu = torch.nn.ReLU()
@@ -155,8 +155,10 @@ class LSTM_Model(nn.Module):
         output, input_sizes = pad_packed_sequence(packed_output, batch_first=True)
 
         # put output from LSTM through linear ReLU activation function and put the result trhough another linear layer
-        # only take the output of the last time step (it's an RNN!)
-        output_relu = self.relu(output[-1])
+        # only take the output of the last time step (it's an RNN!) from each element in the batch
+        output = torch.stack([el[-1] for el in output])
+        output_relu = self.relu(output)
+
         # add some dropout for regularisation
         output_relu = self.dropout(output_relu)
         output_fully_connected_layer = self.fully_connected(output_relu)
@@ -177,13 +179,13 @@ if __name__ == "__main__":
     path = 'preprocess/ALC_features_{}_toy.json'.format(func_or_lld)
 
     # split dataset into train, validation and test set
-    split_dataset_into_splits(path)
+    split_dataset_into_splits(path, func_or_lld)
     print('Splitted dataset')
 
-    # # load the datasets
-    train_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_train.json'.format(func_or_lld))
-    valid_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_valid.json'.format(func_or_lld))
-    test_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_test.json'.format(func_or_lld))
+    # load the datasets
+    train_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_train_toy.json'.format(func_or_lld))
+    valid_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_valid_toy.json'.format(func_or_lld))
+    test_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_test_toy.json'.format(func_or_lld))
     print('Dataset loaded')
 
     # build model
@@ -220,9 +222,10 @@ if __name__ == "__main__":
             # no predictions yet because softmax is only applied by the loss function
             # therefore we get the logits from the model
             logits = model(batch_file_features, batch_file_feature_lengths)
-            # print(f'logits size: {logits.shape}')
             # calculate the current loss by comparing the predictions of the model with the actual labels
-            current_loss = loss(sigmoid(logits), batch_labels)
+            sig_logs = sigmoid(logits).to(torch.float32)
+            batch_labels = batch_labels.to(torch.float32)
+            current_loss = loss(sig_logs, batch_labels)
             # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
             optimizer.zero_grad()
             # computes the gradients for backpropagation
