@@ -1,4 +1,5 @@
-import json, os, random, torch, sys
+import json, os, random, torch, sys, time
+import numpy as np
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 import torch.nn as nn
@@ -6,6 +7,9 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_se
 
 sys.path.append('preprocess/')
 from prepare_data import split_dataset_into_splits
+
+sys.path.append('evaluation/')
+from intoxicat_evaluation import *
 
 label_dict = {'a': 1, 'na': 0, 'cna': 0}
 
@@ -120,23 +124,27 @@ def collate_costum(batch):
 
 class LSTM_Model(nn.Module):
 
-    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+    def __init__(self, input_size, hidden_size, hidden_size_2, num_layers, num_classes):
         # initialise init function of parent module
         super(LSTM_Model, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.hidden_size_2 = hidden_size_2
         self.num_layers = num_layers
         self.num_classes = num_classes
 
         # initialise LSTM architecture
         self.lstm = torch.nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
         # map last hidden layer to intermediate layer before output layer
-        self.fully_connected = torch.nn.Linear(self.hidden_size, 32)
+        self.fully_connected = torch.nn.Linear(self.hidden_size, self.hidden_size_2)
         # map intermediate layer to output layer
-        self.output_layer = torch.nn.Linear(32, self.num_classes)
+        self.output_layer = torch.nn.Linear(self.hidden_size_2, self.num_classes)
 
         # define a relu function
         self.relu = torch.nn.ReLU()
+
+        # define a sigmoid function
+        self.sigmoid = torch.nn.Sigmoid()
 
         # add some dropout
         self.dropout = torch.nn.Dropout(0.25)
@@ -168,19 +176,24 @@ class LSTM_Model(nn.Module):
         output_fully_connected_layer_relu = self.relu(output_fully_connected_layer)
         # add some dropout
         output_fully_connected_layer_relu = self.dropout(output_fully_connected_layer_relu)
-        final_output = self.output_layer(output_fully_connected_layer_relu)
+        final_output_wo_sigmoid = self.output_layer(output_fully_connected_layer_relu)
+
+        # add sigmoid function
+        final_output = self.sigmoid(final_output_wo_sigmoid)
 
         return final_output
 
 
 if __name__ == "__main__":
 
-    func_or_lld = 'Functional'
-    path = 'preprocess/ALC_features_{}_toy.json'.format(func_or_lld)
+    # func_or_lld_list = ['Functional', 'LLD']
+    # paths = ['preprocess/ALC_features_{}_toy.json'.format(func_or_lld_list[0]), 'preprocess/ALC_features_{}_toy.json'.format(func_or_lld_list[1])]
 
-    # split dataset into train, validation and test set
-    split_dataset_into_splits(path, func_or_lld)
-    print('Splitted dataset')
+    # # split dataset into train, validation and test set
+    # split_dataset_into_splits(paths, func_or_lld_list)
+    # print('Splitted dataset')
+
+    func_or_lld = 'LLD'
 
     # load the datasets
     train_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_train_toy.json'.format(func_or_lld))
@@ -193,13 +206,11 @@ if __name__ == "__main__":
     # hidden size = up to us (we are starting with 32)
     # number of layers = up to us (we are starting with 2)
     # number of classes = number of classes (we are starting with binary classification)
-    model = LSTM_Model(len(train_dataset.feature_names), 32, 2, 2)    
+    model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)    
     print(model)
 
     # define loss function
     loss = torch.nn.BCELoss()
-    # add sigmoid function
-    sigmoid = torch.nn.Sigmoid()
 
     # choose an optimizer
     # learning rate = up to us (we start with 0.01)
@@ -216,6 +227,9 @@ if __name__ == "__main__":
     # TRAINING LOOP:
     # ------------------------------------------------------
 
+    print('Start training.')
+    start = time.time()
+
     for epoch in range(number_of_epochs):
         print(f'EPOCH: {epoch}')
         for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(train_loader):
@@ -223,7 +237,7 @@ if __name__ == "__main__":
             # therefore we get the logits from the model
             logits = model(batch_file_features, batch_file_feature_lengths)
             # calculate the current loss by comparing the predictions of the model with the actual labels
-            sig_logs = sigmoid(logits).to(torch.float32)
+            sig_logs = logits.to(torch.float32)
             batch_labels = batch_labels.to(torch.float32)
             current_loss = loss(sig_logs, batch_labels)
             # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
@@ -232,34 +246,42 @@ if __name__ == "__main__":
             current_loss.backward()
             # use backpropagation to update your weights
             optimizer.step()
-
             if batch_no % summary_freq_batches == 0:
                 training_summary.append(current_loss.item())
                 print('------------------------------------')
                 print(f'Batch no. {batch_no} => Loss: {current_loss}')
                 print('------------------------------------')
+    end = time.time()
+    
+    print('Stopped training! Training time was {}'.format(end - start))
 
     # save model
-    torch.save(model.state_dict(), 'intoxication_model_{}_toy.pt'.format(func_or_lld))
+    torch.save(model.state_dict(), 'models/intoxication_model_{}_toy.pt'.format(func_or_lld))
 
-    # load model
-        # model = LSTM_Model(len(train_dataset.feature_names), 512, 2, len(train_dataset[0][0]))
-        # model.load_state_dict(torch.load('emotion_analysis_model.pt'))
+    # # load model
+    # model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)  
+    # model.load_state_dict(torch.load('models/intoxication_model_{}_toy.pt'.format(func_or_lld)))
     # print(model.eval())
 
-    # Test on test set
+    # # Test on test set
     # test_inputs = test_dataset.features
-    # test_labels = test_dataset.labels
         
-    # test_predictions = None
-    # feed the inputs, fetch predictions
-    # test_predictions = model(test_inputs)
+    # # load the test data set using a data loader
+    # test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=collate_costum, batch_size=len(test_dataset))
 
-    # Compute the accuracy of the validation predictions
-    # print("\nTest accuracy after training of {} iterations: {:.2f}%".format(total_count, accuracy(test_labels, test_predictions)*100))
+    # # feed the inputs, fetch predictions
+    # for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(test_loader):
+    #     test_predictions = model(batch_file_features, batch_file_feature_lengths).round()
+    #     test_labels = batch_labels
+
+    # print('Predictions: {}'.format(test_predictions))
+    # print('\nLabels: {}'.format(test_labels))
+
+    # # transform labels and predictions for accuracy function
+    # test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
+    # test_predictions_acc = [np.argmax(pred.detach().numpy()) for pred in test_predictions]
+
+    # # Compute the accuracy of the validation predictions
+    # print('\nTest accuracy after training: {:.2f}%'.format(calculate_accuracy(test_labels_acc, test_predictions_acc)*100))
         
-
-    # for element in loader:
-    #     print(element)
-
-    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    # print('\nNumber of parameters: {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
