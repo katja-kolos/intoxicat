@@ -41,7 +41,7 @@ def make_labels_human_readable(alc_results):
           if result == "a":
               label = "intoxicated"
 
-          elif result == "na"
+          elif result == "na":
               label = "not intoxicated"
 
           else:
