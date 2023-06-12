@@ -13,9 +13,23 @@ from intoxicat_evaluation import *
 
 label_dict = {'a': 1, 'na': 0, 'cna': 0}
 
+
+def get_keep_features(func_or_lld):
+
+    with open('keep_features.tsv', 'r') as kf:
+        lines = kf.readlines()
+
+    if func_or_lld.lower() == 'functional': 
+        return [el.split('\t')[0] for el in lines[1:] if not el.split('\t')[0].startswith('#')]
+    elif func_or_lld.lower() == 'lld':
+        return [el.split('\t')[1] for el in lines[1:] if not el.split('\t')[0].startswith('#')]
+    else:
+        print('Invalid option: {}'.format(func_or_lld))
+    
+
 class Dataset:
 
-    def __init__(self, path_to_file):
+    def __init__(self, path_to_file, func_or_lld):
 
         with open(path_to_file, 'r') as ptf:
             # load json file as dictionary
@@ -44,9 +58,11 @@ class Dataset:
                     # we have to make sure that the order of the features is always the same
                     # so we use sorted to sort the feature names and iterate over the dictionary using the sorted names
                     for feature_name in sorted(value.keys()):
-                        # add feature to the feature list of this file
-                        # access feature using the feature name from the sorted list
-                        features.append(value[feature_name])
+                        # add feature to the feature list of this file if they are in the keep_features list
+                        keep_features = get_keep_features(func_or_lld)
+                        if feature_name in keep_features:
+                            # access feature using the feature name from the sorted list
+                            features.append(value[feature_name])
 
                         # we want to extract the feature names, but they are the same for all files
                         # so we only need to extract them once
@@ -186,19 +202,42 @@ class LSTM_Model(nn.Module):
 
 if __name__ == "__main__":
 
-    # func_or_lld_list = ['Functional', 'LLD']
-    # paths = ['preprocess/ALC_features_{}_toy.json'.format(func_or_lld_list[0]), 'preprocess/ALC_features_{}_toy.json'.format(func_or_lld_list[1])]
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # # split dataset into train, validation and test set
-    # split_dataset_into_splits(paths, func_or_lld_list)
-    # print('Splitted dataset')
+    parser = argparse.ArgumentParser(description='Train an LSTM model')
 
-    func_or_lld = 'LLD'
+    parser.add_argument('already_split', type=bool, default=False, help='Specify whether the data has already been split into train, validation and test set.')
+    parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until (Functional|LLD)_(train|valid|test).json')
+    parser.add_argument('model_file', type=str, help='Name of the model to be saved.')
+    parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
+    parser.add_argument('-t', '--test', action='store_true', help='Put this flag if you wish to test on the test set. Otherwise the model will be tested on the validation set.')
+    args = vars(parser.parse_args())
+
+    if not args['already_split']:
+
+        paths = [args['feature_files'][0]]
+
+        split dataset into train, validation and test set
+        split_dataset_into_splits(paths, [args['features']])
+        print('Splitted dataset')
+
+        dir = args['feature_files'][-1]
+        file_name = args['feature_files'][0].split('/')[-1].split('.')[0]
+
+    else:
+        dir = '/'.join(args['feature_files'][-1].split('/')[:-1])
+        file_name = args['feature_files'][0].split('/')[-1]
 
     # load the datasets
-    train_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_train_toy.json'.format(func_or_lld))
-    valid_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_valid_toy.json'.format(func_or_lld))
-    test_dataset = Dataset('features/ALC_features_opensmile_eGeMAPS_{}_test_toy.json'.format(func_or_lld))
+    print('Loading datasets.')
+
+    train_dataset = Dataset('{}/{}_{}_train.json'.format(dir, file_name, args['features']))
+
+    if args['-t']:
+        test_dataset = Dataset('{}/{}_{}_test.json'.format(dir, file_name, args['features']))
+    else:
+        test_dataset = Dataset('{}/{}_{}_valid.json'.format(dir, file_name, args['features']))
+
     print('Dataset loaded')
 
     # build model
@@ -207,6 +246,7 @@ if __name__ == "__main__":
     # number of layers = up to us (we are starting with 2)
     # number of classes = number of classes (we are starting with binary classification)
     model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)    
+    model.to(device)
     print(model)
 
     # define loss function
@@ -235,10 +275,11 @@ if __name__ == "__main__":
         for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(train_loader):
             # no predictions yet because softmax is only applied by the loss function
             # therefore we get the logits from the model
+            batch_file_features = batch_file_features.to(device)
             logits = model(batch_file_features, batch_file_feature_lengths)
             # calculate the current loss by comparing the predictions of the model with the actual labels
-            sig_logs = logits.to(torch.float32)
-            batch_labels = batch_labels.to(torch.float32)
+            sig_logs = logits.to(dtype=torch.float32, device=device)
+            batch_labels = batch_labels.to(dtype=torch.float32, device=device)
             current_loss = loss(sig_logs, batch_labels)
             # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
             optimizer.zero_grad()
@@ -256,32 +297,33 @@ if __name__ == "__main__":
     print('Stopped training! Training time was {}'.format(end - start))
 
     # save model
-    torch.save(model.state_dict(), 'models/intoxication_model_{}_toy.pt'.format(func_or_lld))
+    torch.save(model.state_dict(), args['model_file'])
 
     # # load model
     # model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)  
-    # model.load_state_dict(torch.load('models/intoxication_model_{}_toy.pt'.format(func_or_lld)))
-    # print(model.eval())
+    # model.load_state_dict(torch.load('../too_big_for_git/models/intoxication_model_{}.pt'.format(func_or_lld)))
+    print(model.eval())
 
-    # # Test on test set
-    # test_inputs = test_dataset.features
+    # Test on test set
+    test_inputs = test_dataset.features
         
-    # # load the test data set using a data loader
-    # test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=collate_costum, batch_size=len(test_dataset))
+    # load the test data set using a data loader
+    test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=collate_costum, batch_size=len(test_dataset))
 
-    # # feed the inputs, fetch predictions
-    # for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(test_loader):
-    #     test_predictions = model(batch_file_features, batch_file_feature_lengths).round()
-    #     test_labels = batch_labels
+    # feed the inputs, fetch predictions
+    for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(test_loader):
+        batch_file_features = batch_file_features.to(device)
+        test_predictions = model(batch_file_features, batch_file_feature_lengths).round()
+        test_labels = batch_labels
 
     # print('Predictions: {}'.format(test_predictions))
     # print('\nLabels: {}'.format(test_labels))
 
-    # # transform labels and predictions for accuracy function
-    # test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
-    # test_predictions_acc = [np.argmax(pred.detach().numpy()) for pred in test_predictions]
+    # transform labels and predictions for accuracy function
+    test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
+    test_predictions_acc = [np.argmax(pred.detach().numpy()) for pred in test_predictions]
 
-    # # Compute the accuracy of the validation predictions
-    # print('\nTest accuracy after training: {:.2f}%'.format(calculate_accuracy(test_labels_acc, test_predictions_acc)*100))
+    # Compute the accuracy of the validation predictions
+    print('\nTest accuracy after training: {:.2f}%'.format(calculate_accuracy(test_labels_acc, test_predictions_acc)*100))
         
-    # print('\nNumber of parameters: {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+    print('\nNumber of parameters: {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))

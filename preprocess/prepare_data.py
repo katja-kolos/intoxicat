@@ -150,7 +150,7 @@ def create_toy_dataset(annotation_file, feature_files):
             json.dump(feature_dict, ff)
 
 
-def split_dataset_into_splits(path_to_dataset, func_or_lld):
+def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
     with open(path_to_dataset[0], 'r') as f:
         dataset_1 = json.load(f)
 
@@ -181,13 +181,16 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld):
             else:
                 test_dict[key] = dataset[key]
         
-        os.makedirs("features", exist_ok=True)
+        os.makedirs(out_name, exist_ok=True)
         # save the resulting dictionaries
-        with open("features/ALC_features_opensmile_eGeMAPS_{}_train_toy.json".format(func_or_lld[i]), mode="w", encoding="utf8") as f:
+
+        file_name = dataset.split('/')[-1].split('.')[0]
+
+        with open("{}/{}_train.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(train_dict, f)
-        with open("features/ALC_features_opensmile_eGeMAPS_{}_valid_toy.json".format(func_or_lld[i]), mode="w", encoding="utf8") as f:
+        with open("{}/{}_val.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(val_dict, f)
-        with open("features/ALC_features_opensmile_eGeMAPS_{}_test_toy.json".format(func_or_lld[i]), mode="w", encoding="utf8") as f:
+        with open("{}/{}_test.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(test_dict, f)
 
 
