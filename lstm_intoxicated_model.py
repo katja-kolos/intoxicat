@@ -1,4 +1,4 @@
-import json, os, random, torch, sys, time
+import json, os, random, torch, sys, time, argparse
 import numpy as np
 from torch.utils.data import Dataset
 import torch.nn.functional as F
@@ -19,10 +19,10 @@ def get_keep_features(func_or_lld):
     with open('keep_features.tsv', 'r') as kf:
         lines = kf.readlines()
 
-    if func_or_lld.lower() == 'functional': 
-        return [el.split('\t')[0] for el in lines[1:] if not el.split('\t')[0].startswith('#')]
+    if func_or_lld.lower() == 'functional':
+        return [el.split('\t')[0].strip() for el in lines[1:] if not el.split('\t')[0].startswith('#')]
     elif func_or_lld.lower() == 'lld':
-        return [el.split('\t')[1] for el in lines[1:] if not el.split('\t')[0].startswith('#')]
+        return [el.split('\t')[1].strip() for el in lines[1:] if not el.split('\t')[1].startswith('#')]
     else:
         print('Invalid option: {}'.format(func_or_lld))
     
@@ -60,10 +60,12 @@ class Dataset:
                     for feature_name in sorted(value.keys()):
                         # add feature to the feature list of this file if they are in the keep_features list
                         keep_features = get_keep_features(func_or_lld)
+                        # print(feature_name)
+                        # print(keep_features)
                         if feature_name in keep_features:
                             # access feature using the feature name from the sorted list
                             features.append(value[feature_name])
-
+                        # exit()
                         # we want to extract the feature names, but they are the same for all files
                         # so we only need to extract them once
                         # so we only extract them from the first file i.e. file of index 0 
@@ -206,19 +208,21 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Train an LSTM model')
 
-    parser.add_argument('already_split', type=bool, default=False, help='Specify whether the data has already been split into train, validation and test set.')
-    parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until (Functional|LLD)_(train|valid|test).json')
+    parser.add_argument('-s', '--split', action='store_true', help='Specify whether the data has already been split into train, validation and test set.')
+    parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until _(train|valid|test).json')
     parser.add_argument('model_file', type=str, help='Name of the model to be saved.')
     parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
     parser.add_argument('-t', '--test', action='store_true', help='Put this flag if you wish to test on the test set. Otherwise the model will be tested on the validation set.')
     args = vars(parser.parse_args())
 
-    if not args['already_split']:
+    print(parser.parse_args())
+
+    if args['split']:
 
         paths = [args['feature_files'][0]]
 
-        split dataset into train, validation and test set
-        split_dataset_into_splits(paths, [args['features']])
+        # split dataset into train, validation and test set
+        split_dataset_into_splits(paths, [args['features']], args['feature_files'][-1])
         print('Splitted dataset')
 
         dir = args['feature_files'][-1]
@@ -231,12 +235,14 @@ if __name__ == "__main__":
     # load the datasets
     print('Loading datasets.')
 
-    train_dataset = Dataset('{}/{}_{}_train.json'.format(dir, file_name, args['features']))
+    dir = dir[:-1] if dir.endswith('/') else dir
 
-    if args['-t']:
-        test_dataset = Dataset('{}/{}_{}_test.json'.format(dir, file_name, args['features']))
+    train_dataset = Dataset('{}/{}_train.json'.format(dir, file_name, args['features']), args['features'])
+
+    if args['test']:
+        test_dataset = Dataset('{}/{}_test.json'.format(dir, file_name, args['features']), args['features'])
     else:
-        test_dataset = Dataset('{}/{}_{}_valid.json'.format(dir, file_name, args['features']))
+        test_dataset = Dataset('{}/{}_valid.json'.format(dir, file_name, args['features']), args['features'])
 
     print('Dataset loaded')
 
@@ -321,7 +327,7 @@ if __name__ == "__main__":
 
     # transform labels and predictions for accuracy function
     test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
-    test_predictions_acc = [np.argmax(pred.detach().numpy()) for pred in test_predictions]
+    test_predictions_acc = [np.argmax(pred.cpu().detach().numpy()) for pred in test_predictions]
 
     # Compute the accuracy of the validation predictions
     print('\nTest accuracy after training: {:.2f}%'.format(calculate_accuracy(test_labels_acc, test_predictions_acc)*100))

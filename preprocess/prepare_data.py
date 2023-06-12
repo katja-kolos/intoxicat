@@ -154,9 +154,6 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
     with open(path_to_dataset[0], 'r') as f:
         dataset_1 = json.load(f)
 
-    with open(path_to_dataset[1], 'r') as f:
-        dataset_2 = json.load(f)
-
     # shuffle the keys of the dictionary
     keys = list(dataset_1.keys())
     random.shuffle(keys)
@@ -172,7 +169,7 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
     test_dict = dict()
 
     # iterate over the shuffled keys and add each key-value pair to the appropriate dictionary
-    for i, dataset in enumerate([dataset_1, dataset_2]):
+    for i, dataset in enumerate([dataset_1]):
         for j, key in enumerate(keys):
             if j < num_train:
                 train_dict[key] = dataset[key]
@@ -181,14 +178,14 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
             else:
                 test_dict[key] = dataset[key]
         
-        os.makedirs(out_name, exist_ok=True)
+        os.makedirs(out_path, exist_ok=True)
         # save the resulting dictionaries
 
-        file_name = dataset.split('/')[-1].split('.')[0]
+        file_name = path_to_dataset[0].split('/')[-1].split('.')[0]
 
         with open("{}/{}_train.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(train_dict, f)
-        with open("{}/{}_val.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
+        with open("{}/{}_valid.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(val_dict, f)
         with open("{}/{}_test.json".format(out_path, file_name), mode="w", encoding="utf8") as f:
             json.dump(test_dict, f)
