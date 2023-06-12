@@ -328,8 +328,12 @@ if __name__ == "__main__":
         test_predictions = model(batch_file_features, batch_file_feature_lengths).round()
         test_labels = batch_labels
 
-    # print('Predictions: {}'.format(test_predictions))
-    # print('\nLabels: {}'.format(test_labels))
+    pred_string = 'Prediction\t--\tLabel\n'
+    pred_string += '\n'.join(['{}\t--\t{}'.format(pred, test_labels[i]) for i, pred in enumerate(test_predictions)])
+
+    pred_file_name = '{}_predictions.txt'.format(args['model_file'].split('.')[0] )
+    with open(pred_file_name, 'w') as pfn:
+        pfn.write(pred_string)
 
     # transform labels and predictions for accuracy function
     test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
