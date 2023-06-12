@@ -58,12 +58,13 @@ class Dataset:
                     # we have to make sure that the order of the features is always the same
                     # so we use sorted to sort the feature names and iterate over the dictionary using the sorted names
                     keep_features = get_keep_features(func_or_lld)
-                    print(keep_features)
-                    print(len(keep_features))
+                    # print(keep_features)
+                    # print(len(keep_features))
                     for feature_name in sorted(value.keys()):
                         # add feature to the feature list of this file if they are in the keep_features list
-                        print(feature_name)
+                        # print(feature_name)
                         if feature_name in keep_features:
+                            # print('yes')
                             # access feature using the feature name from the sorted list
                             features.append(value[feature_name])
 
@@ -73,7 +74,7 @@ class Dataset:
                         if i == 0:
                             feature_names.append(feature_name)
 
-                    exit()
+                    # exit()
             # add the features from this file to the list that includes the features from all files
             # all_features has the following structure: [[[feature1], [feature2], …], [[feature1], [feature2], …], …]   
             # use torch.tensor() to transform feature list to a matrix
@@ -216,6 +217,9 @@ if __name__ == "__main__":
     parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
     parser.add_argument('-t', '--test', action='store_true', help='Put this flag if you wish to test on the test set. Otherwise the model will be tested on the validation set.')
     args = vars(parser.parse_args())
+
+    # python3 lstm_intoxicated_model.py (-s|--split) too_big_for_git/preprocess/ALC_features_Functional.json too_big_for_git/features
+    # \ too_big_for_git/models/ALC_intoxicated_model_Functional.pt Functional
 
     print(parser.parse_args())
 
