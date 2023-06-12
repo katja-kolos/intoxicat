@@ -44,7 +44,7 @@ class Dataset:
             # create empty list for the features of this file
             features = []
             # iterate over the inner dictionary
-            # keys are 'emotion' and 'features'
+            # keys are 'intoxicated' and 'features'
             for key,value in inner_dict.items():
                 if key == 'intoxicated':
                     # append label of this file (value) to labels
@@ -57,21 +57,23 @@ class Dataset:
                     # we want to collect the individual features in a list
                     # we have to make sure that the order of the features is always the same
                     # so we use sorted to sort the feature names and iterate over the dictionary using the sorted names
+                    keep_features = get_keep_features(func_or_lld)
+                    print(keep_features)
+                    print(len(keep_features))
                     for feature_name in sorted(value.keys()):
                         # add feature to the feature list of this file if they are in the keep_features list
-                        keep_features = get_keep_features(func_or_lld)
-                        # print(feature_name)
-                        # print(keep_features)
+                        print(feature_name)
                         if feature_name in keep_features:
                             # access feature using the feature name from the sorted list
                             features.append(value[feature_name])
-                        # exit()
+
                         # we want to extract the feature names, but they are the same for all files
                         # so we only need to extract them once
                         # so we only extract them from the first file i.e. file of index 0 
                         if i == 0:
                             feature_names.append(feature_name)
 
+                    exit()
             # add the features from this file to the list that includes the features from all files
             # all_features has the following structure: [[[feature1], [feature2], …], [[feature1], [feature2], …], …]   
             # use torch.tensor() to transform feature list to a matrix
