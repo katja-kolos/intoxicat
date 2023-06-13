@@ -3,9 +3,12 @@ import sys, json, os, random
 from sklearn.model_selection import train_test_split
 
 
-def create_file_wrapper(path, features, what_type, out_name, meta_data=None):
+def create_file_wrapper(path, features, what_type, out_name, meta_data=None, add_table_data=False):
 
     file_annotations = {}
+
+    if add_table_data:
+        table_data = add_table_metadata(add_table_data)
 
     # access every directory
     for directory in os.listdir(path):
@@ -27,6 +30,11 @@ def create_file_wrapper(path, features, what_type, out_name, meta_data=None):
 
                     if what_type == 'meta_data':
                         file_annotations = gather_metadata(meta_data, annotation_dict, file_annotations, file_path)
+
+                        if add_table_data:
+                            for annotation_name, value in table_data[file_annotations[file_path]['spn']].items():
+                                file_annotations[file_path][annotation_name] = value
+
                     elif what_type == 'word_transcr':
                         file_annotations = gather_word_transcriptions(annotation_dict, file_annotations, file_path)
                     elif what_type == 'phonetic_transcr':
@@ -123,6 +131,22 @@ def gather_phonetic_transcription(annotation_dict, file_annotations, file_path):
     return file_annotations
 
 
+def add_table_metadata(table_file):
+
+    with open(table_file, 'r') as tf:
+        table_lines = tf.readlines()
+
+    table_data = {}
+
+    annotation_names = table_lines[0].split('\t')
+    for line in table_lines[1:]:
+        table_data[line.split('\t')[0]] = {}
+        for i, annotation in enumerate(line.split('\t')[1:]):
+            table_data[line.split('\t')[0]][annotation_names[i+1].strip().lower()] = annotation
+
+    return table_data
+    
+
 def create_toy_dataset(annotation_file, feature_files):
 
     df = pd.read_json(annotation_file, orient='index')
@@ -195,7 +219,7 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
 if __name__ == "__main__":
 
     # command:
-    # python3 prepare_data.py <path_to_directory> <basic_features> <annotation_type> <output_name> (meta_data=<meta_name>)
+    # python3 prepare_data.py <path_to_directory> <basic_features> <annotation_type> <output_name> (meta_data=<meta_name> (<table_name>))
 
     # <path_to_directory>:  string that specifies the path to the directory containing the session directories
 
@@ -208,10 +232,12 @@ if __name__ == "__main__":
     # <output_name>:        string that specifies the name of the output file
 
     # <meta_name>:          list of meta feature names, seperated by commas
-    # possible features:    'utterance,utt,spn,o_utt,item,o_item,alc,sex,age,acc,drh,aak,bak,ges,ces,wea,irreg,anncom,specom,type,content'       
+    # possible features:    'utterance,utt,spn,o_utt,item,o_item,alc,sex,age,acc,drh,aak,bak,ges,ces,wea,irreg,anncom,specom,type,content'    
+
+    # <table_name>:            
 
     try:
-        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+        create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
     except IndexError:
         create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 

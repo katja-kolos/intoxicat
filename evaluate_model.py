@@ -24,6 +24,7 @@ print('Dataset loaded.')
 model = LSTM_Model(len(test_dataset.feature_names), 32, 32, 2, 2)
 model.load_state_dict(torch.load(args['model_file']))
 model.to(device)
+model.eval()
 print(model.eval())
 
 # Test on test set

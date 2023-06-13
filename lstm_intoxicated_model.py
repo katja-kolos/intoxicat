@@ -168,7 +168,7 @@ class LSTM_Model(nn.Module):
         self.sigmoid = torch.nn.Sigmoid()
 
         # add some dropout
-        self.dropout = torch.nn.Dropout(0.25)
+        # self.dropout = torch.nn.Dropout(0.25)
 
     
     def forward(self, input_data, input_lengths):
@@ -185,18 +185,25 @@ class LSTM_Model(nn.Module):
 
         # put output from LSTM through linear ReLU activation function and put the result trhough another linear layer
         # only take the output of the last time step (it's an RNN!) from each element in the batch
-        output = torch.stack([el[-1] for el in output])
+
+        # TODO: take index of input length - 1 (probably)
+        output_wrong = torch.stack([el[-1] for el in output])
+        print(f'Output before: {output_wrong}')
+        output = torch.stack([el[input_lengths[i] - 1] for i, el in enumerate(output)])
+        print(f'Output after: {output}')
+
         output_relu = self.relu(output)
 
         # add some dropout for regularisation
-        output_relu = self.dropout(output_relu)
+        # output_relu = self.dropout(output_relu)
         output_fully_connected_layer = self.fully_connected(output_relu)
 
         # put output from linear layer through linear ReLU activation function and put the result through our output layer
         # the output layer maps the representation of the linear layer to the classes that we want to choose from
         output_fully_connected_layer_relu = self.relu(output_fully_connected_layer)
+        
         # add some dropout
-        output_fully_connected_layer_relu = self.dropout(output_fully_connected_layer_relu)
+        # output_fully_connected_layer_relu = self.dropout(output_fully_connected_layer_relu)
         final_output_wo_sigmoid = self.output_layer(output_fully_connected_layer_relu)
 
         # add sigmoid function
@@ -261,6 +268,7 @@ if __name__ == "__main__":
     model.to(device)
     print(model)
 
+    # focal loss
     # define loss function
     loss = torch.nn.BCELoss()
 
@@ -268,6 +276,7 @@ if __name__ == "__main__":
     # learning rate = up to us (we start with 0.01)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
+    # balance batches
     # torch data loader for testing
     train_loader = torch.utils.data.DataLoader(train_dataset, collate_fn=collate_costum, batch_size=2)
 
@@ -314,6 +323,7 @@ if __name__ == "__main__":
     # # load model
     # model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)  
     # model.load_state_dict(torch.load('../too_big_for_git/models/intoxication_model_{}.pt'.format(func_or_lld)))
+    model.eval()
     print(model.eval())
 
     # Test on test set
