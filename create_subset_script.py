@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+'''
+A script that looks at metadata and returns datasamples (as features) that satisfy your filters on metadata.
+Assumption: when two or more different tuples of filters are passed the condition is considered as 'and' 
+'''
 
 
 def create_subset(filters, 
@@ -23,21 +26,36 @@ def create_subset(filters,
     
     ### helper functions
     def preprocess_triple(triple):
-        arg, operator, value = triple
         
-        #check the type and convert to the one in the dataframe
-        value_exp_type = type(meta_data_df[arg][0])
-        value = value_exp_type(value)
+        def adjust_value_type(value):
+            value = value.strip().strip('"').strip("'")
+            #check the type and convert to the one in the dataframe
+            value_exp_type = type(meta_data_df[arg][0])
+            return value_exp_type(value) 
+        
+        arg, operator, value = triple
+        if arg not in meta_data_df.columns:
+            print (f'ERROR: no such column in the metadata: {arg}')
+            print (f'Possible columns are:')
+            print (meta_data_df.columns)
+            return False
         
         #parse the operator
-        if operator == '>':
-            return (meta_data_df[arg] > value)
-        if operator == '<':
-            return (meta_data_df[arg] < value)
-        if operator == '==':
-            return (meta_data_df[arg] == value)
+        if operator == 'isin':
+            #parse the list of possible values
+            values = value.strip('][').split(',')
+            values = [adjust_value_type(value) for value in values]
+            return (meta_data_df[arg].isin(values))
         else:
-            print(f'Unknown operator: {operator}')
+            value = adjust_value_type(value)
+            if operator == '>':
+                return (meta_data_df[arg] > value)
+            elif operator == '<':
+                return (meta_data_df[arg] < value)
+            elif operator == '==':
+                return (meta_data_df[arg] == value)
+            else:
+                print(f'Unknown operator: {operator}')
     
     def preprocess_filters(filters):
         condition = True
