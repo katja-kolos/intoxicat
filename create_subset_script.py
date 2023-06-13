@@ -22,13 +22,19 @@ def create_subset(filters,
     
     ### helper functions
     def preprocess_triple(triple):
-        arg0, operator, arg1 = triple
+        arg, operator, value = triple
+        
+        #check the type and convert to the one in the dataframe
+        value_exp_type = type(meta_data_df[arg][0])
+        value = value_exp_type(value)
+        
+        #parse the operator
         if operator == '>':
-            return (meta_data_df[arg0] > arg1)
+            return (meta_data_df[arg] > value)
         if operator == '<':
-            return (meta_data_df[arg0] < arg1)
+            return (meta_data_df[arg] < value)
         if operator == '==':
-            return (meta_data_df[arg0] == arg1)
+            return (meta_data_df[arg] == value)
         else:
             print(f'Unknown operator: {operator}')
     
