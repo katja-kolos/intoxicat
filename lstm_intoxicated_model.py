@@ -250,7 +250,7 @@ if __name__ == "__main__":
     else:
         test_dataset = Dataset('{}/{}_valid.json'.format(dir, file_name, args['features']), args['features'])
 
-    print('Dataset loaded')
+    print('Datasets loaded.')
 
     # build model
     # input size = number of features (25)
