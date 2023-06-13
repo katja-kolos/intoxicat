@@ -9,7 +9,8 @@ def create_subset(filters,
                   save_df=True, 
                   return_df=False, 
                   preserve_meta_data=False,
-                  features='Functional'
+                  features='Functional',
+                  balance_classes=True
                  ):
     import json
     import pandas as pd
@@ -70,12 +71,27 @@ def create_subset(filters,
     meta_data_df = pd.read_json(meta_data_path, orient='index')
     meta_data_df['common_path'] = meta_data_df.index.map(preprocess_index)
     meta_data_df.set_index('common_path', inplace=True)
-    
+
     condition = preprocess_filters(filters)
     filtered_df = meta_data_df[condition].join(features_df, how='left', on='common_path', lsuffix='_l')
+    
     if not preserve_meta_data:
         columns_to_preserve = features_df.columns
         filtered_df = filtered_df[columns_to_preserve]
+    
+    if balance_classes:
+        n_sober = len(filtered_df[filtered_df['intoxicated'].isin(['na','cna'])])
+        n_intoxicated = len(filtered_df[filtered_df['intoxicated']=='a'])
+        n_to_keep = min(n_sober, n_intoxicated)
+        #print(f'Balance classes: {n_to_keep} samples will be kept for each class')
+        filtered_sober_df = filtered_df[filtered_df['intoxicated'].isin(['na','cna'])].sample(n=n_to_keep)
+        #print(f'{len(filtered_sober_df)} samples kept for sober class')
+        filtered_intoxicated_df = filtered_df[filtered_df['intoxicated']=='a'].sample(n=n_to_keep)
+        #print(f'{len(filtered_sober_df)} samples kept for intoxicated class')
+        balanced_filtered_df = filtered_sober_df.append(filtered_intoxicated_df)
+        #print(f'{len(balanced_filtered_df)} samples kept overall')
+        filtered_df = balanced_filtered_df.sample(frac=1) #shuffle the rows
+        print(f'{len(filtered_df)} samples kept overall')
     
     if save_df:
         out_path = os.path.join(path, f'filtered_features_{stringify_filters(filters)}.json')
@@ -85,7 +101,6 @@ def create_subset(filters,
     if return_df:
         return filtered_df
 
-
 # In[ ]:
 
 
@@ -94,14 +109,17 @@ import argparse
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create a subset from the data based on filters')
 
-    parser.add_argument('filters', type=str, nargs='+', help='Specify triples of filters in the format: arg1,operator1,value1 arg2,operator2,value2')
+    parser.add_argument('filters', type=str, nargs='*', help='Specify triples of filters in the format: arg1,operator1,value1 arg2,operator2,value2')
     parser.add_argument('out_path', default='preprocess/', type=str)
     parser.add_argument('preserve_metadata', type=bool, default=False, help='If true, all columns from the metadata json will also be in the output json. Otherwise, only audio features are saved')
     parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
+    parser.add_argument('balance_classes', type=bool, default=True, help='If true, datapoints that exceed the number of datapoints in the smallest class will be disregarded (data loss); if false, all retrieved data is preserved (unbalanced classes)')
     args = vars(parser.parse_args())
     create_subset(filters=[x.split(',') for x in args['filters']], 
                       path=args['out_path'], 
                       save_df=True, 
                       return_df=False, 
                       preserve_meta_data=args['preserve_metadata'],
-                      features=args['features'])
+                      features=args['features'],
+                      balance_classes=args['balance_classes']
+                 )
