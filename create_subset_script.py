@@ -2,8 +2,23 @@
 # coding: utf-8
 
 '''
-A script that looks at metadata and returns datasamples (as features) that satisfy your filters on metadata.
-Assumption: when two or more different tuples of filters are passed the condition is considered as 'and' 
+Hey :) This script looks at metadata, Functional features OR LLD features, 
+and returns datasamples that satisfy your needs.
+
+The output by default is the contents of the corresponding features file, 
+but you can also keep fields from the metadata json (preserve_meta_data=True).
+
+You define what part of the dataset you're interested in by: 
+[from the command line] a string of 1 or more filters;
+[when importing the create_subset function] a list of triples.
+
+Each filter is a tuple: argument, operator, value. Supported operators:
+>, <, ==, isin.
+
+Tuples within the string are separated by ,. 
+
+Attention! For two or more different tuples of filters, 
+the condition is interpreted as 'and' (intersection of the subconditions).
 '''
 
 
