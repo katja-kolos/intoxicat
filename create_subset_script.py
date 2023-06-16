@@ -100,7 +100,7 @@ def create_subset(filters,
     features_df.set_index('common_path', inplace=True)
     
     #absolute path so that we're not worried about where to run the script from
-    meta_data_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/data/meta_data_annotation_all_features_050623.json'
+    meta_data_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/data/meta_data_annotation_all_features_130623.json'
     meta_data_df = pd.read_json(meta_data_path, orient='index')
     meta_data_df['common_path'] = meta_data_df.index.map(preprocess_index)
     meta_data_df.set_index('common_path', inplace=True)
