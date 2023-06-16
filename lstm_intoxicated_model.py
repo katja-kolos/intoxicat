@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+from focal_loss.focal_loss import FocalLoss
 
 sys.path.append('preprocess/')
 from prepare_data import split_dataset_into_splits
@@ -186,11 +187,10 @@ class LSTM_Model(nn.Module):
         # put output from LSTM through linear ReLU activation function and put the result trhough another linear layer
         # only take the output of the last time step (it's an RNN!) from each element in the batch
 
-        # TODO: take index of input length - 1 (probably)
-        output_wrong = torch.stack([el[-1] for el in output])
-        print(f'Output before: {output_wrong}')
+        # output_wrong = torch.stack([el[-1] for el in output])
+        # print(f'Output before: {output_wrong}')
         output = torch.stack([el[input_lengths[i] - 1] for i, el in enumerate(output)])
-        print(f'Output after: {output}')
+        # print(f'Output after: {output}')
 
         output_relu = self.relu(output)
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train an LSTM model')
 
     parser.add_argument('-s', '--split', action='store_true', help='Specify whether the data has already been split into train, validation and test set.')
-    parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until _(train|valid|test).json')
+    parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until (train|valid|test).json')
     parser.add_argument('model_file', type=str, help='Name of the model to be saved.')
     parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
     parser.add_argument('-t', '--test', action='store_true', help='Put this flag if you wish to test on the test set. Otherwise the model will be tested on the validation set.')
@@ -250,12 +250,12 @@ if __name__ == "__main__":
 
     dir = dir[:-1] if dir.endswith('/') else dir
 
-    train_dataset = Dataset('{}/{}_train.json'.format(dir, file_name, args['features']), args['features'])
+    train_dataset = Dataset('{}/{}train.json'.format(dir, file_name, args['features']), args['features'])
 
     if args['test']:
-        test_dataset = Dataset('{}/{}_test.json'.format(dir, file_name, args['features']), args['features'])
+        test_dataset = Dataset('{}/{}test.json'.format(dir, file_name, args['features']), args['features'])
     else:
-        test_dataset = Dataset('{}/{}_valid.json'.format(dir, file_name, args['features']), args['features'])
+        test_dataset = Dataset('{}/{}valid.json'.format(dir, file_name, args['features']), args['features'])
 
     print('Datasets loaded.')
 
@@ -270,7 +270,8 @@ if __name__ == "__main__":
 
     # focal loss
     # define loss function
-    loss = torch.nn.BCELoss()
+    # loss = torch.nn.BCELoss()
+    loss = FocalLoss(gamma=0.5)
 
     # choose an optimizer
     # learning rate = up to us (we start with 0.01)
@@ -300,7 +301,11 @@ if __name__ == "__main__":
             logits = model(batch_file_features, batch_file_feature_lengths)
             # calculate the current loss by comparing the predictions of the model with the actual labels
             sig_logs = logits.to(dtype=torch.float32, device=device)
-            batch_labels = batch_labels.to(dtype=torch.float32, device=device)
+            batch_labels = batch_labels.to(dtype=torch.int64, device=device)
+            print(sig_logs)
+            print(sig_logs.size())
+            print(batch_labels)
+            print(batch_labels.size())
             current_loss = loss(sig_logs, batch_labels)
             # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
             optimizer.zero_grad()
