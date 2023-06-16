@@ -90,7 +90,6 @@ def create_subset(filters,
         common_path = last_two_parts_of_the_path_without_file_extension.strip('_annot')
         return common_path
     
-    
     if features.lower() == 'functional':
         features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_Functional.json'
     elif features.lower() == 'lld':
@@ -102,6 +101,7 @@ def create_subset(filters,
     
     #absolute path so that we're not worried about where to run the script from
     meta_data_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/data/meta_data_annotation_all_features_130623.json'
+    
     meta_data_df = pd.read_json(meta_data_path, orient='index')
     meta_data_df['common_path'] = meta_data_df.index.map(preprocess_index)
     meta_data_df.set_index('common_path', inplace=True)
