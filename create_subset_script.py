@@ -85,9 +85,10 @@ def create_subset(filters,
     
     #this one helps us join on path names by stripping the .wav/.json info in the end
     def preprocess_index(s):
-        s = s.split('.')[0]
-        return '/'.join(s.split('/')[:-1]) + '/' + '_'.join(s.split('/')[-1].split('_')[:3])
-    ###
+        last_two_parts_of_the_path = '/'.join(s.split('/')[-2:])
+        last_two_parts_of_the_path_without_file_extension = last_two_parts_of_the_path.split('.')[0]
+        common_path = last_two_parts_of_the_path_without_file_extension.strip('_annot')
+        return common_path
     
     
     if features.lower() == 'functional':
