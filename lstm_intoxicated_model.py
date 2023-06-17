@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
-from focal_loss.focal_loss import FocalLoss
+# from focal_loss.focal_loss import FocalLoss
 
 sys.path.append('preprocess/')
 from prepare_data import split_dataset_into_splits
@@ -12,14 +12,17 @@ from prepare_data import split_dataset_into_splits
 sys.path.append('evaluation/')
 from intoxicat_evaluation import *
 
-label_dict = {'a': 1, 'na': 0, 'cna': 0}
+label_dict = {'na': 0, 'cna': 0, 'a': 1}
 
 
 def get_keep_features(func_or_lld):
 
+    # this file includes the names of all of the extracted features
+    # names that are marked by a "#" in front of them will be ignored 
     with open('keep_features.tsv', 'r') as kf:
         lines = kf.readlines()
 
+    # return a list including all of the feature names that should be considered by the model 
     if func_or_lld.lower() == 'functional':
         return [el.split('\t')[0].strip() for el in lines[1:] if not el.split('\t')[0].startswith('#')]
     elif func_or_lld.lower() == 'lld':
@@ -54,18 +57,15 @@ class Dataset:
                     # add label
                     labels.append(intox_value)
                 elif key == 'features':
+                    # get the list of the features that should be considered
+                    keep_features = get_keep_features(func_or_lld)
                     # value of features is a dictionary 
                     # we want to collect the individual features in a list
                     # we have to make sure that the order of the features is always the same
                     # so we use sorted to sort the feature names and iterate over the dictionary using the sorted names
-                    keep_features = get_keep_features(func_or_lld)
-                    # print(keep_features)
-                    # print(len(keep_features))
                     for feature_name in sorted(value.keys()):
                         # add feature to the feature list of this file if they are in the keep_features list
-                        # print(feature_name)
                         if feature_name in keep_features:
-                            # print('yes')
                             # access feature using the feature name from the sorted list
                             features.append(value[feature_name])
 
@@ -75,7 +75,6 @@ class Dataset:
                         if i == 0:
                             feature_names.append(feature_name)
 
-                    # exit()
             # add the features from this file to the list that includes the features from all files
             # all_features has the following structure: [[[feature1], [feature2], …], [[feature1], [feature2], …], …]   
             # use torch.tensor() to transform feature list to a matrix
@@ -106,6 +105,7 @@ class Dataset:
 # train_corpus.labels # will give use the labels of our dataset
 # train_corpus.features # will give use the features of our dataset
 # train_corpus.feature_names # will give use the names of the features in our dataset
+
 
 def collate_costum(batch):
     # batch is a list of triples with labels, file features and length
@@ -146,21 +146,29 @@ def collate_costum(batch):
 
 class LSTM_Model(nn.Module):
 
-    def __init__(self, input_size, hidden_size, hidden_size_2, num_layers, num_classes):
+    def __init__(self, input_size, layers_sizes, num_classes):
         # initialise init function of parent module
         super(LSTM_Model, self).__init__()
         self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.hidden_size_2 = hidden_size_2
-        self.num_layers = num_layers
+        # change hidden sizes for dynamic layers
+        self.layers_sizes = layers_sizes
         self.num_classes = num_classes
 
         # initialise LSTM architecture
-        self.lstm = torch.nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
-        # map last hidden layer to intermediate layer before output layer
-        self.fully_connected = torch.nn.Linear(self.hidden_size, self.hidden_size_2)
+        self.lstm = torch.nn.LSTM(input_size=self.input_size, hidden_size=self.layers_sizes[0], num_layers=len(self.layers_sizes), batch_first=True)
+        
+        # # map last hidden layer to intermediate layer before output layer
+        # self.fully_connected = torch.nn.Linear(self.hidden_size, self.hidden_size_2)
+
+        # try to make the number of linear layers dynamic
+        self.layers = nn.ModuleList()
+        input_size = self.layers_sizes[0]
+        for size in self.layers_sizes[1:]:
+            self.layers.append(torch.nn.Linear(input_size, size))
+            input_size = size  # For the next layer
+
         # map intermediate layer to output layer
-        self.output_layer = torch.nn.Linear(self.hidden_size_2, self.num_classes)
+        self.output_layer = torch.nn.Linear(self.layers_sizes[-1], self.num_classes)
 
         # define a relu function
         self.relu = torch.nn.ReLU()
@@ -190,24 +198,35 @@ class LSTM_Model(nn.Module):
         # output_wrong = torch.stack([el[-1] for el in output])
         # print(f'Output before: {output_wrong}')
         output = torch.stack([el[input_lengths[i] - 1] for i, el in enumerate(output)])
-        # print(f'Output after: {output}')
+        print(f'Output after LSTM: {output}')
 
         output_relu = self.relu(output)
-
-        # add some dropout for regularisation
+        print(f'Output after ReLU: {output_relu}')
+        # # add some dropout for regularisation
         # output_relu = self.dropout(output_relu)
-        output_fully_connected_layer = self.fully_connected(output_relu)
+
+        # go through all of the linear layers
+        input_linear = output_relu
+        for i, linear_layer in enumerate(self.layers):
+            input_linear = linear_layer(input_linear)
+            input_linear_relu = self.relu(input_linear)
+            print(f'Output after Linear Layer {i}: {input_linear_relu}')
+        
+        output_fully_connected_layer = input_linear
 
         # put output from linear layer through linear ReLU activation function and put the result through our output layer
         # the output layer maps the representation of the linear layer to the classes that we want to choose from
         output_fully_connected_layer_relu = self.relu(output_fully_connected_layer)
+        print(f'Output after another ReLU: {output_fully_connected_layer_relu}')
         
         # add some dropout
         # output_fully_connected_layer_relu = self.dropout(output_fully_connected_layer_relu)
         final_output_wo_sigmoid = self.output_layer(output_fully_connected_layer_relu)
+        print(f'Output after output layer: {final_output_wo_sigmoid}')
 
         # add sigmoid function
         final_output = self.sigmoid(final_output_wo_sigmoid)
+        print(f'Final output: {final_output}')
 
         return final_output
 
@@ -240,6 +259,7 @@ if __name__ == "__main__":
 
         dir = args['feature_files'][-1]
         file_name = args['feature_files'][0].split('/')[-1].split('.')[0]
+        print(file_name)
 
     else:
         dir = '/'.join(args['feature_files'][-1].split('/')[:-1])
@@ -250,12 +270,12 @@ if __name__ == "__main__":
 
     dir = dir[:-1] if dir.endswith('/') else dir
 
-    train_dataset = Dataset('{}/{}train.json'.format(dir, file_name, args['features']), args['features'])
+    train_dataset = Dataset('{}/{}_train.json'.format(dir, file_name, args['features']), args['features'])
 
     if args['test']:
-        test_dataset = Dataset('{}/{}test.json'.format(dir, file_name, args['features']), args['features'])
+        test_dataset = Dataset('{}/{}_test.json'.format(dir, file_name, args['features']), args['features'])
     else:
-        test_dataset = Dataset('{}/{}valid.json'.format(dir, file_name, args['features']), args['features'])
+        test_dataset = Dataset('{}/{}_valid.json'.format(dir, file_name, args['features']), args['features'])
 
     print('Datasets loaded.')
 
@@ -264,14 +284,14 @@ if __name__ == "__main__":
     # hidden size = up to us (we are starting with 32)
     # number of layers = up to us (we are starting with 2)
     # number of classes = number of classes (we are starting with binary classification)
-    model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)    
+    model = LSTM_Model(len(train_dataset.feature_names), [32, 32], 2)    
     model.to(device)
     print(model)
 
     # focal loss
     # define loss function
-    # loss = torch.nn.BCELoss()
-    loss = FocalLoss(gamma=0.5)
+    loss = torch.nn.BCELoss()
+    # loss = FocalLoss(gamma=0.5)
 
     # choose an optimizer
     # learning rate = up to us (we start with 0.01)
@@ -297,22 +317,35 @@ if __name__ == "__main__":
         for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths) in enumerate(train_loader):
             # no predictions yet because softmax is only applied by the loss function
             # therefore we get the logits from the model
-            batch_file_features = batch_file_features.to(device)
+            print(batch_file_features)
+            batch_file_features = batch_file_features.to(device).requires_grad_(True)
+            # batch_file_features.requires_grad = True
             logits = model(batch_file_features, batch_file_feature_lengths)
             # calculate the current loss by comparing the predictions of the model with the actual labels
             sig_logs = logits.to(dtype=torch.float32, device=device)
-            batch_labels = batch_labels.to(dtype=torch.int64, device=device)
+            batch_labels = batch_labels.to(dtype=torch.float32, device=device)
             print(sig_logs)
             print(sig_logs.size())
             print(batch_labels)
             print(batch_labels.size())
             current_loss = loss(sig_logs, batch_labels)
-            # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
-            optimizer.zero_grad()
             # computes the gradients for backpropagation
             current_loss.backward()
             # use backpropagation to update your weights
+            # for i, layer in enumerate(model.layers):
+                # print(f'Weights before optimisation: {model.layers[i].weight}')
+            print(f'Weights before optimisation: {list(model.parameters())[0]}')
             optimizer.step()
+            # for i, layer in enumerate(model.layers):
+                # print(f'Weights after optimisation: {model.layers[i].weight}')
+            print(f'Weights after optimisation: {list(model.parameters())[0]}')
+            for name, parameter in model.named_parameters():
+                if parameter.requires_grad:
+                    print(f'Parameter: {name}')
+                    print(f'Gradient: {parameter.grad}')
+            # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
+            optimizer.zero_grad()
+
             if batch_no % summary_freq_batches == 0:
                 training_summary.append(current_loss.item())
                 print('------------------------------------')
@@ -326,7 +359,7 @@ if __name__ == "__main__":
     torch.save(model.state_dict(), args['model_file'])
 
     # # load model
-    # model = LSTM_Model(len(train_dataset.feature_names), 32, 32, 2, 2)  
+    # model = LSTM_Model(len(train_dataset.feature_names), [32, 32], 2)  
     # model.load_state_dict(torch.load('../too_big_for_git/models/intoxication_model_{}.pt'.format(func_or_lld)))
     model.eval()
     print(model.eval())
