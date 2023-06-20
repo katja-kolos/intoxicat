@@ -128,7 +128,7 @@ def create_subset(filters,
         print(f'{len(filtered_df)} samples kept overall')
     
     if save_df:
-        out_path = os.path.join(path, f'filtered_features_{stringify_filters(filters)}.json')
+        out_path = os.path.join(path, f'filtered_{features}_features_{stringify_filters(filters)}.json')
         print(f'Filtered dataframe saved to: {out_path}')
         filtered_df.to_json(out_path, orient='index')
         
