@@ -92,9 +92,11 @@ def create_subset(filters,
     
     
     if features.lower() == 'functional':
-        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_Functional.json'
+        # features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_Functional.json'
+        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_Functional_toy.json'
     elif features.lower() == 'lld':
-        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_LLD.json'
+        # features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_LLD.json'
+        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_LLD_toy.json'
 
     features_df = pd.read_json(features_path, orient='index')
     features_df['common_path'] = features_df.index.map(preprocess_index)
