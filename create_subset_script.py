@@ -151,8 +151,19 @@ def create_subset(filters,
     if return_df:
         return filtered_df
 
-# In[ ]:
 
+def parse_input_string(filter_string):
+    import re
+    #processes a string containing one triple of filters, e.g. 'sex,isin,[F,M]'
+    delimiter = '_DEL_' #temporary delimiter to replace the ',' within brackets
+    filter_string = re.sub(r'(\[[^\[]+)(,)([^\]]+\])', fr'\1{delimiter}\3', filter_string)
+    args = filter_string.split(',')
+    if len(args) != 3:
+        print('Invalid format of filter string. Expecting arg,operator,value')
+    else:
+        arg, op, value = args
+    value = re.sub(fr'{delimiter}', ',', value)
+    return arg, op, value
 
 import argparse
 
@@ -166,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument('--preserve_metadata', type=bool, default=False, help='If true, all columns from the metadata json will also be in the output json. Otherwise, only audio features are saved')
     parser.add_argument('--max_samples', type=int, default=None, help='max total rows of both classes in the output data')
     args = vars(parser.parse_args())
-    create_subset(filters=[x.split(',') for x in args['filters']], 
+    create_subset(filters=[parse_input_string(x) for x in args['filters']], 
                       save_path=args['out_path'], 
                       save_df=True, 
                       return_df=False, 
