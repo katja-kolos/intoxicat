@@ -9,13 +9,13 @@ The output by default is the contents of the corresponding features file,
 but you can also keep fields from the metadata json (preserve_meta_data=True).
 
 You define what part of the dataset you're interested in by: 
-[from the command line] a string of 1 or more filters;
+[from the command line] a sequence of 1 or more filter strings;
 [when importing the create_subset function] a list of triples.
 
 Each filter is a tuple: argument, operator, value. Supported operators:
->, <, ==, isin.
+> (alternative: gt), < (alternative: lt), == (alternative: eq), isin.
 
-Tuples within the string are separated by ,. 
+Arguments within the triple string are separated by ,. 
 
 Attention! For two or more different tuples of filters, 
 the condition is interpreted as 'and' (intersection of the subconditions).
