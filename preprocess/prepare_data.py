@@ -180,6 +180,8 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
 
     # shuffle the keys of the dictionary
     keys = list(dataset_1.keys())
+    # fix random seed
+    random.seed(42)
     random.shuffle(keys)
 
     # calculate the number of samples for each split
