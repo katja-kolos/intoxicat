@@ -1,0 +1,197 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+To summarize:
+To achieve a set of exactly 30+60 recordings per speaker
+- use only recordings where a BPF *.par or a *.TextGrid file exists,
+- from these discard all multiple versions that carry the entries
+  ACO: false
+  ACO: false 2nd
+  ACO: spont
+  in the BPF file header (*.par).
+or use the pre-filtered amuDB set stored in /EMU/ALC_emuDB on volume 1.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+Some general information:
+
+- 85 male and 77 female speakers
+- age of speakers ranges from 21 to 64 years
+- total number of regular recordings is 162 x (30+60) = 14.580
+- Emu database contains only one valid version per recording item. The total number of valid recordings is:
+	regular pairwise recordings:  162 speaker x (30 + 60) items +
+	control group                  20 speaker x 30 items    
+
+
+Every audio file (recorded with headset, so marked with an "h") has the following additional files:
+
+- A file containing orthographic transcripts and phonemic segmentation in BAS Partitur Format (BPF) (extension '*.par')
+- A file containing praat annotation with word and MAUS segmentation
+- An annotation file that includes these features:
+
+spn        : speaker ID 001 - 999
+utt        : utterance ID = signalfile name without '_h_00'
+o_utt      : utterance of corresponding item in other set (A o. NA) or 'null'
+item       : item number 001 - 060
+o_item     : item number in corresponding other set (A o. NA) or 'null'
+
+-------------------------------------------------------------------------------------
+! items refer to the different prompts that were given to the speaker
+! in total we have 30 items for intoxicated speech and 60 for sober speech
+! the 30 items for intoxicated speech is a subset of the items for sober speech (except for one address, item number A 004)
+
+A recording under intoxication (set A,CNA) contains the following speech 
+items:
+3 monologues
+2 dialogues
+5 numbers
+9 command&control (4 read, 5 spontaneous)
+6 addresses (1 spelled)
+5 tongue twisters
+Total: 30
+
+A recording under sober conditions (set NA) contains the following speech 
+items:
+5 monologues
+5 dialogues
+10 numbers
+19 command&control (9 read, 10 spontaneous)
+11 addresses (1 spelled)
+10 tongue twisters
+Total: 60
+-------------------------------------------------------------------------------------
+
+alc        : ialcoholisation a = set A | na = set NA
+sex        : F|M
+age        : 22 - 75
+acc        : state code of primary school e.g. BY
+
+-------------------------------------------------------------------------------------
+ACC : German state of elementary school (to judge dialectal background)
+      (see PICTURES/GermanyMap.gif GermanyTable.gif)
+      Code | Federal state
+      ------------------------------
+       BB  | Brandenburg
+       BE  | Berlin
+       BW  | Baden-W374rttemberg
+       BY  | Bayern
+       HB  | Bremen
+       HE  | Hessen
+       HH  | Hamburg
+       MV  | Mecklenburg-Vorpommern
+       NI  | Niedersachsen
+       NW  | Nordrhein-Westfalen
+       RP  | Rheinland-Pfalz
+       SH  | Schleswig-Holstein
+       SL  | Saarland
+       SN  | Sachsen
+       ST  | Sachsen-Anhalt
+       TH  | Th374ringen
+       AT  | Austria
+       CH  | Switzerland
+       XX  | OTHER/UNKNOWN
+      ------------------------------    
+-------------------------------------------------------------------------------------
+
+drh        : drinking habits = light | moderate | heavy
+aak        : breath alcohol concentration as float, e.g. 0.001 = 0.1% or '???'
+
+-------------------------------------------------------------------------------------
+what does '???' mean?
+-------------------------------------------------------------------------------------
+
+bak        : blood alcohol concentration
+ges        : general disposition, see BPF entry GES
+
+-------------------------------------------------------------------------------------
+Before both tests speakers are asked to judge their general disposition
+for this day in 10 categories:
+f1 happy
+f2 stressed out
+f3 aggressive
+f4 sad
+f5 relaxed
+f6 tired
+f7 depressive
+f8 desperate
+f9 rested
+f10 frolicsome
+-------------------------------------------------------------------------------------
+
+ces        : disposition during recording , see BPF entry CES
+
+-------------------------------------------------------------------------------------
+After the test speakers are asked to judge their disposition during the
+test in 4 categories:
+r1 relaxed
+r2 bored
+r3 exited
+r4 nervous
+-------------------------------------------------------------------------------------
+
+wea        : weather = SUN | RAIN
+irreg      : string containing the counts of 9 types of labeled irregularities
+             "i1|i2|i3|i4|i5|i6|i7|i8|i9"  with
+             i1 : sum of 'irregularities' in this recording (see section 
+                  'annotation' for a detailed definition of this count)
+             i2 : number of hesitations
+             i3 : number of pauses < 1sec
+             i4 : number of pauses > 1sec
+             i5 : number of prolonged/delayed phones
+             i6 : number of pronunciation errors
+             i7 : number of repetitions/stutter
+             i8 : number of repairs
+             i9 : number of interupted words, e.g. 'Haus_<"ah>_mann'
+             
+-------------------------------------------------------------------------------------
+irregularities were counted for a subset of ALC only:
+	tongue twisters, read car commands, monologues, dialogues.
+	Items 002,003,005,007,010,012,014,016,018,020,021,023,024,029 in set A 
+	Items 002,003,005,007,010,012,014,016,018,020,022,023,025,027,
+	030,032,034,036,038,040,041,044,050,051,052,056,057,058,059   in set NA.
+	All other items have the number # = 9999.
+-------------------------------------------------------------------------------------
+
+anncom     : comment of annotators
+specom     : comment about the speaker (e.g. pathological)
+f0_uttlist : internal subset coding
+type       : speech type
+             R/E/M/D/L  = Read / Elicited / Monologue / Dialogue / List
+content    : speech content type
+             A/P/Q/N/R/C/S/T = Address / Picture / Question / Number / 
+                         Read Command / Spont. Command /
+                         Spelling / Tongue twister
+                         
+-------------------------------------------------------------------------------------
+content groups:
+
+- reading/listing: content=(A|N|R|S|T), type=(R|L)
+- free: content=(P|Q|C), type=(E|M|D)
+
+
+----------------
+IMPORTANT FOR US
+----------------
+
+- alc
+- sex
+- age
+- acc
+- drh
+- aak
+- bak
+- ges
+- ces
+- wea
+- irreg
+- anncom
+- specom
+- type
+- content
+
+--------------------------------------------------------
+not in annotation file but maybe still important for us?
+--------------------------------------------------------
+
+- SMO : smoker Y/N
+- PRO : profession
+
+(can be found in speaker file)
