@@ -28,6 +28,7 @@ def create_subset(filters,
                   return_df=False, 
                   preserve_meta_data=False,
                   features='Functional',
+                  normalize_features=False,
                   balance_classes=True, 
                   max_samples=None, 
                   prefix=''
@@ -98,12 +99,20 @@ def create_subset(filters,
         common_path = last_two_parts_of_the_path_without_file_extension.strip('_annot')
         return common_path
     
-    if features.lower() == 'functional':
-        # features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_Functional.json'
-        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_Functional_toy.json'
-    elif features.lower() == 'lld':
-        # features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_LLD.json'
-        features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_LLD_toy.json'
+    if normalize_features:
+        if features.lower() == 'functional':
+            features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_normalized_Functional.json'
+        elif features.lower() == 'lld':
+            print ('Normalization is not supported for LLD features. Try with Functional features or LLD without normalization')
+            return
+            #features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_normalized_LLD.json'
+    else:
+        if features.lower() == 'functional':
+            features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_Functional.json'
+            #features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_Functional_toy.json'
+        elif features.lower() == 'lld':
+            features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/preprocess/ALC_features_LLD.json'
+            #features_path = '/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/intoxicat/preprocess/ALC_features_LLD_toy.json'
 
     features_df = pd.read_json(features_path, orient='index')
     features_df['common_path'] = features_df.index.map(preprocess_index)
@@ -188,6 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--balance_classes', type=bool, default=True, help='If true, datapoints that exceed the number of datapoints in the smallest class will be disregarded (data loss); if false, all retrieved data is preserved (unbalanced classes)')
     parser.add_argument('--preserve_metadata', type=bool, default=False, help='If true, all columns from the metadata json will also be in the output json. Otherwise, only audio features are saved')
     parser.add_argument('--max_samples', type=int, default=None, help='max total rows of both classes in the output data')
+    parser.add_argument('--normalize_features', type=bool, default=False, help='If true, computing the mean and standard deviation of each feature across all utterances from a speaker, indifferent to the class-label distribution, for the calculated Functional and LLD features')
     args = vars(parser.parse_args())
     create_subset(filters=[parse_input_string(x) for x in args['filters']], 
                       save_path=args['out_path'], 
@@ -196,5 +206,6 @@ if __name__ == '__main__':
                       preserve_meta_data=args['preserve_metadata'],
                       features=args['features'],
                       balance_classes=args['balance_classes'],
-                      max_samples=args['max_samples']
+                      max_samples=args['max_samples'],
+                      normalize_features=args['normalize_features']
                  )
