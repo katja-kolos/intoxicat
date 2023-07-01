@@ -54,11 +54,16 @@ def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_
         print(file)
         audio_file = meta_data['annotates']
         path = meta_data['path']
+        speaker_id = meta_data['spn']
+
         path_to_file = os.path.join(path, audio_file)
         print(f'Working on {audio_file}')
         # create key + nested dictionary for file
         json_lld[path_to_file] = {}
         json_functionals[path_to_file] = {}
+
+        json_lld[path_to_file]['spn'] = speaker_id
+        json_functionals[path_to_file]['spn'] = speaker_id
 
         intoxication_status = meta_data['alc']
         json_lld[path_to_file]['intoxicated'] = intoxication_status

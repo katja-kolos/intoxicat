@@ -217,7 +217,6 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
             json.dump(test_dict, f)
 
 
-
 if __name__ == "__main__":
 
     # command:
