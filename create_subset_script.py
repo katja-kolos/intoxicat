@@ -29,7 +29,8 @@ def create_subset(filters,
                   preserve_meta_data=False,
                   features='Functional',
                   balance_classes=True, 
-                  max_samples=None
+                  max_samples=None, 
+                  prefix=''
                  ):
     import json
     import pandas as pd
@@ -141,14 +142,23 @@ def create_subset(filters,
         filtered_df = filtered_df.sample(n=max_samples)
     
     if save_df:
-        if not os.path.exists(save_path):
+        if not os.path.exists(save_path) and not os.path.exists(os.path.abspath(save_path)):
             os.mkdir(save_path)
             print(f'Created directory: {save_path}')
-        out_filename = os.path.join(save_path, f'filtered_{features}_features_{stringify_filters(filters)}_{flags}.json')
-        filtered_df.to_json(out_filename, orient='index')
+        out_filename = os.path.join(save_path, f'{prefix}filtered_{features}_features_{stringify_filters(filters)}_{flags}.json')
+        
+        #Previously used: df.to_json, which uses ujson under the hood, resulting in escaped '/' ('\/')
+        #filtered_df.to_json(out_filename, orient='index') 
+        
+        #replacing this with a slower implementation with the default json library
+        import json
+        with open(out_filename, 'w') as jsn:
+            json.dump(filtered_df.to_dict(orient='index'), jsn)
         print(f'Filtered dataframe saved to: {out_filename}')
+        
         #set 744 permission with sticky bit (stat.S_ISVTX sticky bit)
         os.chmod(out_filename, stat.S_IRUSR | stat.S_IWUSR| stat.S_IXUSR| stat.S_IRGRP | stat.S_IROTH | stat.S_ISVTX) 
+        return out_filename
         
     if return_df:
         return filtered_df
