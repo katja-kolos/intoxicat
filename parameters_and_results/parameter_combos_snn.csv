@@ -1,0 +1,13 @@
+COMBO_NAME  EPOCHS   BATCH_SIZE LEARNING_RATE   LAYERS  OPTIMIZER   DROPOUT BATCH_NORM
+default 10  5   0.0001  [64, 32, 16, 8, 4]  Adam    False   True
+combo1  10  5   0.0001  [32]  Adam    False True
+combo2  10  5   0.0001  [64, 16, 4] Adam   False  True
+combo3  10  10  0.0001  [64, 32, 16, 8, 4]  Adam    False   True
+combo4  10  5   0.0001  [64, 32, 16, 8, 4]  Adam    0.5 True
+combo5  10  10  0.0001  [32]    Adam    False   True
+combo6  10  5   0.0001  [64, 32, 16, 8, 4]  SGD False   True
+combo7  20  10  0.0001  [32]    Adam    False   True
+combo8  10  5   0.00001 [64, 32, 16, 8, 4]  Adam    False   True
+combo9  10  5   0.0005  [64, 32, 16, 8, 4]  Adam    False   True
+combo10 10  15  0.0001  [32]    Adam    False   True
+combo11 10  15  0.0001  [32]    Adam    0.1 True
