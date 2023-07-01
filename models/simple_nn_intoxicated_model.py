@@ -17,7 +17,7 @@ from intoxicat_evaluation import *
 
 class Simple_Neural_Network(nn.Module):
 
-    def __init__(self, input_size, layers_sizes, num_classes, dropout, bn):
+    def __init__(self, input_size, layers_sizes, num_classes, dropout, bn, activation):
         super().__init__()
         self.input_size = input_size
         self.layers_sizes = layers_sizes
@@ -32,8 +32,11 @@ class Simple_Neural_Network(nn.Module):
         # map intermediate layer to output layer
         self.output_layer = torch.nn.Linear(self.layers_sizes[-1], self.num_classes)
 
-        # define a sigmoid function
-        self.sigmoid = torch.nn.Sigmoid()
+        # define an activation function
+        if activation == 'tanh':
+            self.activation = torch.nn.Tanh()
+        else:
+            self.activation = torch.nn.Sigmoid()
 
         # define a softmax function
         self.softmax = torch.nn.Softmax(dim=1)
@@ -46,39 +49,47 @@ class Simple_Neural_Network(nn.Module):
         self.batch_norms.append(torch.nn.BatchNorm1d(self.num_classes))
 
         # add dropout
-        self.dropout = nn.Dropout(p=dropout) 
+        self.dropout = nn.Dropout(p=dropout)
+
+        # add loss curve so loss can be stored in model directly
+        self.loss_curve = []
 
 
     def forward(self, input_data, input_lengths, dropout, bn):
 
         # go through all of the linear layers
-        input_linear_sigmoid = torch.stack([inp[0] for inp in list(input_data)] )
+        input_linear_activation = torch.stack([inp[0] for inp in list(input_data)] )
         for i, linear_layer in enumerate(self.layers):
-            input_linear = input_linear_sigmoid
+            input_linear = input_linear_activation
             # add dropout if in parameters
             if dropout:
                 input_linear = self.dropout(input_linear)
             input_linear = linear_layer(input_linear)
             # add batch normalization if in parameters
             if bn:
-                batch_norm = self.batch_norms[i+1]
+                batch_norm = self.batch_norms[i]
                 input_linear = batch_norm(input_linear)
-            input_linear_sigmoid = self.sigmoid(input_linear)
-            # print(f'Output after Linear Layer {i}: {input_linear_sigmoid}')
+            input_linear_activation = self.activation(input_linear)
+            # print(f'Output after Linear Layer {i}: {input_linear_activation}')
 
-        # put output from linear layer through linear sigmoid activation function and put the result through our output layer
+        # put output from linear layer through linear activation activation function and put the result through our output layer
         # the output layer maps the representation of the linear layer to the classes that we want to choose from
-        # output_fully_connected_layer_sigmoid = self.sigmoid(output_fully_connected_layer)
-        output_fully_connected_layer_sigmoid = input_linear_sigmoid
-        # print(f'Output after another sigmoid: {output_fully_connected_layer_sigmoid}')
+        # output_fully_connected_layer_activation = self.activation(output_fully_connected_layer)
+        output_fully_connected_layer_activation = input_linear_activation
+        # print(f'Output after another activation: {output_fully_connected_layer_activation}')
         
-        final_output_wo_softmax = self.output_layer(output_fully_connected_layer_sigmoid)
+        final_output_wo_softmax = self.output_layer(output_fully_connected_layer_activation)
         # print(f'Output after output layer: {final_output_wo_softmax}')
 
-        last_batch_norm = self.batch_norms[-1]
-        final_output_norm = last_batch_norm(final_output_wo_softmax)
+        if bn:
+            last_batch_norm = self.batch_norms[-1]
+            final_output_wo_softmax = last_batch_norm(final_output_wo_softmax)
         # add softmax function
-        final_output = self.softmax(final_output_norm)
+        final_output = self.softmax(final_output_wo_softmax)
         # print(f'Final output: {final_output}')
 
         return final_output
+
+
+    def store_loss(self, loss):
+        self.loss_curve.append(loss) 
