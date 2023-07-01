@@ -10,23 +10,23 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 from trainloop_utilities import *
 
-sys.path.append('preprocess/')
-from prepare_data import split_dataset_into_splits
-from data_utilities import Dataset, collate_costum
+# sys.path.append('preprocess/')
+from preprocess.prepare_data import split_dataset_into_splits
+from preprocess.data_utilities import Dataset, collate_costum
 
-sys.path.append('evaluation/')
-from intoxicat_evaluation import *
+# sys.path.append('evaluation/')
+from evaluation.intoxicat_evaluation import *
 
-sys.path.append('models/')
-from lstm_intoxicated_model import LSTM_Model
-from simple_nn_intoxicated_model import Simple_Neural_Network
+# sys.path.append('models/')
+from models.lstm_intoxicated_model import LSTM_Model
+from models.simple_nn_intoxicated_model import Simple_Neural_Network
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 parser = argparse.ArgumentParser(description='Train an LSTM model')
 parser.add_argument('-s', '--split', action='store_true', help='Specify whether the data has already been split into train, validation and test set.')
-parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until (train|valid|test).json')
+parser.add_argument('feature_files', type=str, nargs='+', help='If the data has not been split yet, specify the feature file and then the path where the split data should be put. If the data is already split, specify the path and the name of the file of the split files up until (_train|_valid|_test).json')
 parser.add_argument('model_file', type=str, help='Name of the model to be saved.')
 parser.add_argument('features', choices=['Functional', 'LLD'], default='Functional', help='Specify one of: Functional, LLD')
 parser.add_argument('parameters', type=str, default='Functional', help='Specify the parameters of the model.')
@@ -70,9 +70,10 @@ dropout =   params['dropout']
 optimizer = params['optim']
 batch_norm = params['bn']
 batch_size = params['batch_size']
+activation = params['activation']
 try:
     bidirectional = params['bidirectional']
-    lstm_layers = parameters['lstm_layers']
+    lstm_layers = params['lstm_layers']
     bias = params['bias']
 except KeyError:
     pass
@@ -83,7 +84,7 @@ if args['features'] == 'Functional':
     # number of classes = number of classes (we are starting with binary classification)
     # dropout
     # batch normalization
-    model = Simple_Neural_Network(len(train_dataset.feature_names), layers, 2, dropout, batch_norm)
+    model = Simple_Neural_Network(len(train_dataset.feature_names), layers, 2, dropout, eval(batch_norm))
 elif args['features'] == 'LLD':
     # input size = number of features (25)
     # hidden layers = up to us (we are starting with [16, 8, 4])
@@ -92,7 +93,7 @@ elif args['features'] == 'LLD':
     # dropout
     # bidirectional
     # batch normalization
-    model = LSTM_Model(len(train_dataset.feature_names), layers, lstm_layers, 2, dropout, bidirectional, batch_norm)    
+    model = LSTM_Model(len(train_dataset.feature_names), layers, lstm_layers, 2, dropout, eval(batch_norm), eval(bidirectional), eval(bias))    
 else:
     print('Invalid feature choice!')
     exit()
@@ -114,9 +115,9 @@ train_loader = torch.utils.data.DataLoader(train_dataset, collate_fn=collate_cos
 # warm up scheduler for learning rate
 scheduler = ToucanWarmupScheduler(optimizer, warmup_steps=4000)
 # number of epochs = up to us (we are starting with 10)
-number_of_epochs = parameters['num_epochs']
+number_of_epochs = params['num_epochs']
 training_summary = []
-summary_freq_batches = 10
+summary_freq_batches = 20
 
 # TRAINING LOOP:
 # ------------------------------------------------------
@@ -129,7 +130,7 @@ for epoch in range(number_of_epochs):
         # no predictions yet because softmax is only applied by the loss function
         # therefore we get the logits from the model
         batch_file_features = batch_file_features.to(device).requires_grad_(True)
-        logits = model(batch_file_features, batch_file_feature_lengths)
+        logits = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm, activation)
         # calculate the current loss by comparing the predictions of the model with the actual labels
         sig_logs = logits.to(dtype=torch.float32, device=device)
         batch_labels = batch_labels.to(dtype=torch.float32, device=device)
@@ -160,6 +161,8 @@ for epoch in range(number_of_epochs):
         # call warm-up scheduler
         scheduler.step()
         if batch_no % summary_freq_batches == 0:
+            # store loss
+            model.store_loss(current_loss.item())
             training_summary.append(current_loss.item())
             print('------------------------------------')
             print(f'Batch no. {batch_no} => Loss: {current_loss}')
@@ -190,7 +193,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=collate_costu
 # feed the inputs, fetch predictions
 for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths, batch_file_names) in enumerate(test_loader):
     batch_file_features = batch_file_features.to(device)
-    test_predictions = model(batch_file_features, batch_file_feature_lengths).round()
+    test_predictions = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm, activation).round()
     test_labels = batch_labels
 pred_string = 'Prediction\t--\tLabel\n'
 pred_string += '\n'.join(['{}\t--\t{}'.format(pred, test_labels[i]) for i, pred in enumerate(test_predictions)])
