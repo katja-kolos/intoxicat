@@ -33,20 +33,13 @@ def global_z_normalization(file_name, out_file):
         concatenated_df = pd.concat(data_frames)
         concatenated_df = concatenated_df.set_index('file_name')
 
-        print('--------------------------------------------------------')
-        print(speaker)
-        print(concatenated_df)
-
         if len(data_frames) > 1:
             normalized_df = concatenated_df.apply(zscore)
         else:
             normalized_df = concatenated_df
 
-        print(normalized_df)
-        print('--------------------------------------------------------')
-
         for audio_file in audio_files:
-            file_dict[audio_file]['features'] = normalized_df.loc[[audio_file]].to_dict('records')[0]
+            file_dict[audio_file]['features'] = {key: [value] for key, value in normalized_df.loc[[audio_file]].to_dict('records')[0].items()}
 
     with open(out_file, 'w') as of:
         json.dump(file_dict, of)

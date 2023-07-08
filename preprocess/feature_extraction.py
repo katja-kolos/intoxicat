@@ -117,4 +117,4 @@ def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_
 
 if __name__ == "__main__":
 
-    extract_features_opensmile('../data/meta_data_annotation_all_features_050623.json', 'ALC_features_LLD.json', 'ALC_features_Functional.json')
+    extract_features_opensmile('../data/meta_data_annotation_all_features_130623.json', '../../too_big_to_git/ALC_features_LLD.json', '../../too_big_to_git/ALC_features_Functional.json')

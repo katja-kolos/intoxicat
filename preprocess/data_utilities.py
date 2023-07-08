@@ -77,7 +77,7 @@ class Dataset:
 
                 elif key == 'annotates':
                     # append filename of this file (value) to filenames
-                    file_names.append(value)
+                    file_names.append('{}/{}'.format(inner_dict['path'], value))
 
             # add the features from this file to the list that includes the features from all files
             # all_features has the following structure: [[[feature1], [feature2], …], [[feature1], [feature2], …], …]   
