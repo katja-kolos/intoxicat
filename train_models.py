@@ -1,4 +1,4 @@
-import json, os, random, torch, sys, time, argparse, copy
+import json, os, random, torch, sys, time, argparse, copy, re
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D 
@@ -9,15 +9,13 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_se
 from torch.optim.lr_scheduler import _LRScheduler
 
 from trainloop_utilities import *
+from basics import *
 
-# sys.path.append('preprocess/')
 from preprocess.prepare_data import split_dataset_into_splits
 from preprocess.data_utilities import Dataset, collate_costum
 
-# sys.path.append('evaluation/')
 from evaluation.intoxicat_evaluation import *
 
-# sys.path.append('models/')
 from models.lstm_intoxicated_model import LSTM_Model
 from models.simple_nn_intoxicated_model import Simple_Neural_Network
 
@@ -84,7 +82,8 @@ if args['features'] == 'Functional':
     # number of classes = number of classes (we are starting with binary classification)
     # dropout
     # batch normalization
-    model = Simple_Neural_Network(len(train_dataset.feature_names), layers, 2, dropout, eval(batch_norm))
+    model = Simple_Neural_Network(len(train_dataset.feature_names), layers, 2, dropout, eval(batch_norm), activation)
+    out_file = 'parameters_and_results/snn_results.csv'
 elif args['features'] == 'LLD':
     # input size = number of features (25)
     # hidden layers = up to us (we are starting with [16, 8, 4])
@@ -93,7 +92,8 @@ elif args['features'] == 'LLD':
     # dropout
     # bidirectional
     # batch normalization
-    model = LSTM_Model(len(train_dataset.feature_names), layers, lstm_layers, 2, dropout, eval(batch_norm), eval(bidirectional), eval(bias))    
+    model = LSTM_Model(len(train_dataset.feature_names), layers, lstm_layers, 2, dropout, eval(batch_norm), activation, eval(bidirectional), eval(bias))    
+    out_file = 'parameters_and_results/lstm_results.csv'
 else:
     print('Invalid feature choice!')
     exit()
@@ -129,27 +129,34 @@ for epoch in range(number_of_epochs):
     for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths, batch_file_names) in enumerate(train_loader):
         # no predictions yet because softmax is only applied by the loss function
         # therefore we get the logits from the model
+        print('Storing features.')
         batch_file_features = batch_file_features.to(device).requires_grad_(True)
-        logits = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm, activation)
+        print('Computing logits.')
+        logits = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm)
         # calculate the current loss by comparing the predictions of the model with the actual labels
+        print('Transform logits to float.')
         sig_logs = logits.to(dtype=torch.float32, device=device)
+        print('Put labels on device.')
         batch_labels = batch_labels.to(dtype=torch.float32, device=device)
+        print('Calculate current loss.')
         current_loss = loss(sig_logs, batch_labels)
         # computes the gradients for backpropagation
+        print('Compute gradients.')
         current_loss.backward()
         # plot_grad_flow(model.named_parameters())
         # for i, layer in enumerate(model.layers):
         #     w = copy.deepcopy(model.layers[i].weight)
-        weight_list_before = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
+        # weight_list_before = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
         #     print(f'Weights before optimisation: {model.layers[i].weight}')
         # print(f'Weights before optimisation: {list(model.parameters())[0]}')
         # use backpropagation to update your weights
+        print('Perform backpropagation')
         optimizer.step()
         # for i, layer in enumerate(model.layers):
         #     w2 = copy.deepcopy(model.layers[i].weight)
         #     print(f'Weights after optimisation: {model.layers[i].weight}')
-        weight_list_after_after = copy.deepcopy(weight_list_after)
-        weight_list_after = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
+        # weight_list_after_after = copy.deepcopy(weight_list_after)
+        # weight_list_after = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
         # print(w == w2)
         # print(f'Weights after optimisation: {list(model.parameters())[0]}')
         # for name, parameter in model.named_parameters():
@@ -157,8 +164,10 @@ for epoch in range(number_of_epochs):
         #         print(f'Parameter: {name}')
         #         print(f'Gradient: {parameter.grad}')
         # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
+        print('Call zero grad.')
         optimizer.zero_grad()
         # call warm-up scheduler
+        print('Step up the scheduler.')
         scheduler.step()
         if batch_no % summary_freq_batches == 0:
             # store loss
@@ -193,18 +202,31 @@ test_loader = torch.utils.data.DataLoader(test_dataset, collate_fn=collate_costu
 # feed the inputs, fetch predictions
 for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths, batch_file_names) in enumerate(test_loader):
     batch_file_features = batch_file_features.to(device)
-    test_predictions = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm, activation).round()
+    batch_file_names = batch_file_names
+    test_predictions = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm).round()
     test_labels = batch_labels
-pred_string = 'Prediction\t--\tLabel\n'
-pred_string += '\n'.join(['{}\t--\t{}'.format(pred, test_labels[i]) for i, pred in enumerate(test_predictions)])
-pred_file_name = '{}_predictions.txt'.format(args['model_file'].split('.pt')[0] )
-with open(pred_file_name, 'w') as pfn:
-    pfn.write(pred_string)
+
+pred_dict = {file_name: (int(torch.argmax(test_labels, dim=1)[i]), int(torch.argmax(test_predictions, dim=1)[i])) for i, file_name in enumerate(batch_file_names)}
+pred_file_name = '{}/preds/{}_predictions.json'.format('/'.join(args['model_file'].split('/')[:-1]), args['model_file'].split('/')[-1].strip('.pt'))
+write_json(pred_file_name, pred_dict)
+
+# pred_string = 'Prediction\t--\tLabel\n'
+# pred_string += '\n'.join(['{}\t--\t{}'.format(pred, test_labels[i]) for i, pred in enumerate(test_predictions)])
+# pred_file_name = '{}_predictions.txt'.format(args['model_file'].split('.pt')[0])
+# with open(pred_file_name, 'w') as pfn:
+#     pfn.write(pred_string)
+
+# generate confusion matrix
+plot_confusion_matrix(test_labels, test_predictions, args['model_file'])
+
 # transform labels and predictions for accuracy function
 test_labels_acc = [np.argmax(label.detach().numpy()) for label in test_labels]
 test_predictions_acc = [np.argmax(pred.cpu().detach().numpy()) for pred in test_predictions]
 # Compute the accuracy of the validation predictions
 print('\nTest accuracy after training: {:.2f}%'.format(calculate_accuracy(test_labels_acc, test_predictions_acc)*100))
+
+with open(out_file, 'a') as of:
+    of.write('\n{}\t{}'.format(re.search('combo\d+', args['model_file'])[0], round(calculate_accuracy(test_labels_acc, test_predictions_acc)*100, 3)))
     
 print('\nNumber of parameters: {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
 print('--------------------------------------------------------------------')

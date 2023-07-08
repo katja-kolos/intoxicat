@@ -1,7 +1,8 @@
 import json, os, random, torch, sys, time, argparse, copy
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D 
+from matplotlib.lines import Line2D
+from sklearn import metrics 
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 import torch.nn as nn
@@ -71,3 +72,19 @@ def plot_grad_flow(named_parameters):
                 Line2D([0], [0], color="k", lw=4)], ['max-gradient', 'mean-gradient', 'zero-gradient'])
 
     plt.save()
+
+
+def plot_confusion_matrix(targets, predictions, model_name):
+
+    targets = torch.argmax(targets, dim=1)
+    predictions = torch.argmax(predictions, dim=1)
+
+    confusion_matrix = metrics.confusion_matrix(targets.cpu(), predictions.cpu())
+
+    cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = ['Sober', 'Intoxicated'])
+
+    cm_display.plot()
+
+    file_name = '{}/plots/{}_predictions.png'.format('/'.join(model_name.split('/')[:-1]), model_name.split('/')[-1].strip('.pt'))
+    
+    plt.savefig(file_name)
