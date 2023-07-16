@@ -129,19 +129,13 @@ for epoch in range(number_of_epochs):
     for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths, batch_file_names) in enumerate(train_loader):
         # no predictions yet because softmax is only applied by the loss function
         # therefore we get the logits from the model
-        print('Storing features.')
         batch_file_features = batch_file_features.to(device).requires_grad_(True)
-        print('Computing logits.')
         logits = model(batch_file_features, batch_file_feature_lengths, dropout, batch_norm)
         # calculate the current loss by comparing the predictions of the model with the actual labels
-        print('Transform logits to float.')
         sig_logs = logits.to(dtype=torch.float32, device=device)
-        print('Put labels on device.')
         batch_labels = batch_labels.to(dtype=torch.float32, device=device)
-        print('Calculate current loss.')
         current_loss = loss(sig_logs, batch_labels)
         # computes the gradients for backpropagation
-        print('Compute gradients.')
         current_loss.backward()
         # plot_grad_flow(model.named_parameters())
         # for i, layer in enumerate(model.layers):
@@ -150,7 +144,6 @@ for epoch in range(number_of_epochs):
         #     print(f'Weights before optimisation: {model.layers[i].weight}')
         # print(f'Weights before optimisation: {list(model.parameters())[0]}')
         # use backpropagation to update your weights
-        print('Perform backpropagation')
         optimizer.step()
         # for i, layer in enumerate(model.layers):
         #     w2 = copy.deepcopy(model.layers[i].weight)
@@ -164,10 +157,8 @@ for epoch in range(number_of_epochs):
         #         print(f'Parameter: {name}')
         #         print(f'Gradient: {parameter.grad}')
         # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
-        print('Call zero grad.')
         optimizer.zero_grad()
         # call warm-up scheduler
-        print('Step up the scheduler.')
         scheduler.step()
         if batch_no % summary_freq_batches == 0:
             # store loss

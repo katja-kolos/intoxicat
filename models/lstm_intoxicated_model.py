@@ -23,6 +23,9 @@ class LSTM_Model(nn.Module):
         self.num_layers = num_layers
         self.num_classes = num_classes
 
+        # encode info about bidirectionality
+        self.bidirectional = bidirectional
+
         # initialise LSTM architecture
         self.lstm = torch.nn.LSTM(input_size=self.input_size, hidden_size=self.layers_sizes[0], num_layers=self.num_layers, batch_first=True, bidirectional=bidirectional, dropout=dropout, bias=bias)
         
@@ -31,7 +34,12 @@ class LSTM_Model(nn.Module):
 
         # try to make the number of linear layers dynamic
         self.layers = nn.ModuleList()
-        input_size = self.layers_sizes[0]
+        if self.bidirectional:
+            first_layer = 2*self.layers_sizes[0]
+        else:
+            first_layer = self.layers_sizes[0]
+
+        input_size = first_layer
         for size in self.layers_sizes[1:]:
             self.layers.append(torch.nn.Linear(input_size, size))
             input_size = size  # For the next layer
@@ -51,16 +59,13 @@ class LSTM_Model(nn.Module):
         # define batch normalization
         # make it dynamic as well
         self.batch_norms = nn.ModuleList()
-        self.batch_norms.append(torch.nn.BatchNorm1d(self.layers_sizes[0]))
+        self.batch_norms.append(torch.nn.BatchNorm1d(first_layer))
         for size in self.layers_sizes[1:]:
             self.batch_norms.append(torch.nn.BatchNorm1d(size))
         self.batch_norms.append(torch.nn.BatchNorm1d(self.num_classes))
 
         # add dropout
         self.dropout = nn.Dropout(p=dropout) 
-
-        # encode info about bidirectionality
-        self.bidirectional = bidirectional
 
         # add loss curve so loss can be stored in model directly
         self.loss_curve = []
@@ -70,41 +75,37 @@ class LSTM_Model(nn.Module):
         # use model and add any further layers and activation functions
         
         # pack the padded sequence so that the model knows where padding starts
-        print('Pack input.')
         packed_input = pack_padded_sequence(input_data, input_lengths, batch_first=True, enforce_sorted=False)
 
-        # initialise hidden & cell state
-        print('Initialise hidden state.')
-        h0 = torch.zeros(self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
-        print('Initialise cell state.')
-        c0 = torch.zeros(self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
+        if self.bidirectional:
+            # initialise hidden & cell state
+            h0 = torch.zeros(2*self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
+            c0 = torch.zeros(2*self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
+        else:
+            # initialise hidden & cell state
+            h0 = torch.zeros(self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
+            c0 = torch.zeros(self.num_layers, input_data.size(0), self.layers_sizes[0]).to(input_data.device)
             
         # put input data through our LSTM that we defined above
-        print('Put data through LSTM.')
         packed_output, _ = self.lstm(packed_input, (h0, c0))
 
         # unpack padded output
-        print('Unpack output.')
         output, input_sizes = pad_packed_sequence(packed_output, batch_first=True)
 
         # put output from LSTM through linear activation activation function and put the result trhough another linear layer
         # only take the output of the last time step (it's an RNN!) from each element in the batch
-        print('Stack output.')
         output = torch.stack([el[input_lengths[i] - 1] for i, el in enumerate(output)])
         # print(f'Output after LSTM: {output}')
 
         if bn:
             # apply batch normalization
-            print('Batch norm.')
             first_batch_norm = self.batch_norms[0]
             output = first_batch_norm(output)
 
-        print('Activation.')
         output_activation = self.activation(output)
         # print(f'Output after activation: {output_activation}')
 
         # go through all of the linear layers
-        print('Linear layers.')
         input_linear_activation = output_activation
         for i, linear_layer in enumerate(self.layers):
             input_linear = input_linear_activation
@@ -121,22 +122,18 @@ class LSTM_Model(nn.Module):
 
         # put output from linear layer through linear activation activation function and put the result through our output layer
         # the output layer maps the representation of the linear layer to the classes that we want to choose from
-        print('Linear layer.')
         output_fully_connected_layer_activation = input_linear_activation
         # print(f'Output after another activation: {output_fully_connected_layer_activation}')
         
-        print('Output layer.')
         final_output_wo_softmax = self.output_layer(output_fully_connected_layer_activation)
         # print(f'Output after output layer: {final_output_wo_softmax}')
 
         if bn:
             # apply batch normalization
-            print('Batch norm.')
             last_batch_norm = self.batch_norms[-1]
             final_output_wo_softmax = last_batch_norm(final_output_wo_softmax)
         
         # add softmax function
-        print('Final output.')
         final_output = self.softmax(final_output_wo_softmax)
         # print(f'Final output: {final_output}')
 

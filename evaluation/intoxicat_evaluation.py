@@ -112,7 +112,6 @@ def check_acc_for_groups(meta_data_path, predictions_path, filters):
   predictions_df['common_path'] = predictions_df.index.map(preprocess_index)
   predictions_df.set_index('common_path', inplace=True)
   predictions_df.rename(columns={0:'Targets', 1: 'Predictions'}, inplace=True)  
-  print(predictions_df)
   
   meta_data_df = pd.read_json(meta_data_path, orient='index')
   meta_data_df['common_path'] = meta_data_df.index.map(preprocess_index)
@@ -123,29 +122,10 @@ def check_acc_for_groups(meta_data_path, predictions_path, filters):
   # filtered_df = meta_data_df[condition].join(predictions_df, how='left', on='common_path', lsuffix='_l')
   filtered_df = meta_data_df[condition].join(predictions_df, how='inner', on='common_path', lsuffix='_l')
 
-  print(filtered_df)
-  print(filtered_df.columns)
   targets = list(filtered_df['Targets'])
   predictions = list(filtered_df['Predictions'])
-  print(len(targets) == len(predictions))
 
   print(f'Targets: {targets}')
   print(f'Predictions: {predictions}')
   return calculate_accuracy(targets, predictions)
     
-
-# def plot_confusion_matrix(targets, predictions, train_loop=True, model_name=None):
-# 
-#   if one_hot:
-#     targets = torch.argmax(targets, dim=1)
-#     predictions = torch.argmax(predictions, dim=1)
-# 
-#   confusion_matrix = metrics.confusion_matrix(targets.cpu(), predictions.cpu())
-# 
-#   cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = ['Sober', 'Intoxicated'])
-# 
-#   cm_display.plot()
-# 
-#   if train_loop:
-#     file_name = model_name.split('.pt')[0] + '_predictions.png'
-#     plt.savefig(file_name)
