@@ -2,9 +2,6 @@ import pandas as pd
 import sys, json, os, random, argparse
 from scipy.stats import zscore
 
-# !!!!!!!!!!!
-# works only for Functional features so far
-# !!!!!!!!!!!
 
 def get_speaker_dict(file_dict):
 

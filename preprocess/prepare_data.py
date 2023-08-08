@@ -154,8 +154,6 @@ def create_toy_dataset(annotation_file, feature_files):
 
     print(len(test))
     print(test.columns)
-    # for test_el in test:
-    #     print(test_el)
     audio_files = [os.path.join(row['path'], row['annotates']) for index, row in test.iterrows()]
 
     for feature_file in feature_files:
@@ -241,5 +239,3 @@ if __name__ == "__main__":
         create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
     except IndexError:
         create_file_wrapper(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
-
-    # create_toy_dataset('../data/meta_data_annotation_all_features_220523.json', ['../../preprocess/ALC_features_Functional.json', '../../preprocess/ALC_features_LLD.json'])

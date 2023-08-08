@@ -31,9 +31,6 @@ parser.add_argument('parameters', type=str, default='Functional', help='Specify 
 parser.add_argument('-t', '--test', action='store_true', help='Put this flag if you wish to test on the test set. Otherwise the model will be tested on the validation set.')
 args = vars(parser.parse_args())
 
-# python3 lstm_intoxicated_model.py (-s|--split) too_big_for_git/preprocess/ALC_features_Functional.json too_big_for_git/features
-# \ too_big_for_git/models/ALC_intoxicated_model_Functional.pt Functional
-
 print('--------------------------------------------------------------------')
 print(parser.parse_args())
 
@@ -137,25 +134,8 @@ for epoch in range(number_of_epochs):
         current_loss = loss(sig_logs, batch_labels)
         # computes the gradients for backpropagation
         current_loss.backward()
-        # plot_grad_flow(model.named_parameters())
-        # for i, layer in enumerate(model.layers):
-        #     w = copy.deepcopy(model.layers[i].weight)
-        # weight_list_before = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
-        #     print(f'Weights before optimisation: {model.layers[i].weight}')
-        # print(f'Weights before optimisation: {list(model.parameters())[0]}')
         # use backpropagation to update your weights
         optimizer.step()
-        # for i, layer in enumerate(model.layers):
-        #     w2 = copy.deepcopy(model.layers[i].weight)
-        #     print(f'Weights after optimisation: {model.layers[i].weight}')
-        # weight_list_after_after = copy.deepcopy(weight_list_after)
-        # weight_list_after = [copy.deepcopy(model.layers[i].weight) for i, layer in enumerate(model.layers)]
-        # print(w == w2)
-        # print(f'Weights after optimisation: {list(model.parameters())[0]}')
-        # for name, parameter in model.named_parameters():
-        #     if parameter.requires_grad:
-        #         print(f'Parameter: {name}')
-        #         print(f'Gradient: {parameter.grad}')
         # set gradients to zero so that previous computations don't influence the computation of the current gardient(s)
         optimizer.zero_grad()
         # call warm-up scheduler
@@ -166,12 +146,6 @@ for epoch in range(number_of_epochs):
             training_summary.append(current_loss.item())
             print('------------------------------------')
             print(f'Batch no. {batch_no} => Loss: {current_loss}')
-            # print(f'Are the previously calculated weights used?')
-            # for j, weight in enumerate(weight_list_before):
-            #     print(weight == weight_list_after_after[j])
-            # print(f'Have the weights been altered in this batch loop?')
-            # for j, weight in enumerate(weight_list_before):
-            #     print(weight != weight_list_after[j])
             print('------------------------------------')
         
 end = time.time()
@@ -200,12 +174,6 @@ for batch_no, (batch_labels, batch_file_features, batch_file_feature_lengths, ba
 pred_dict = {file_name: (int(torch.argmax(test_labels, dim=1)[i]), int(torch.argmax(test_predictions, dim=1)[i])) for i, file_name in enumerate(batch_file_names)}
 pred_file_name = '{}/preds/{}_predictions.json'.format('/'.join(args['model_file'].split('/')[:-1]), args['model_file'].split('/')[-1].strip('.pt'))
 write_json(pred_file_name, pred_dict)
-
-# pred_string = 'Prediction\t--\tLabel\n'
-# pred_string += '\n'.join(['{}\t--\t{}'.format(pred, test_labels[i]) for i, pred in enumerate(test_predictions)])
-# pred_file_name = '{}_predictions.txt'.format(args['model_file'].split('.pt')[0])
-# with open(pred_file_name, 'w') as pfn:
-#     pfn.write(pred_string)
 
 # generate confusion matrix
 plot_confusion_matrix(test_labels, test_predictions, args['model_file'])

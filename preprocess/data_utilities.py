@@ -144,7 +144,6 @@ def collate_costum(batch):
     # permute shape of tensor to make it accessible for the model
     stacked_features = torch.permute(torch.stack(torch.split(flattened_stacked_features, number_of_features)), (0, 2, 1))
     
-    # why do we need the length?
     stacked_feature_lengths = torch.LongTensor(feature_length_list)
 
     return stacked_labels, stacked_features, stacked_feature_lengths, file_name_list

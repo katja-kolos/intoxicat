@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
     # TODO: add argv options
 
-    anno_file = 'data/meta_data_annotation_all_features_220523.json'
+    anno_file = '../data/meta_data_annotation_all_features_130623.json'
 
-    mf_dict = get_stats('acc', anno_file)
+    mf_dict = get_stats('alc', anno_file)
 
     print(mf_dict)
 
