@@ -1,6 +1,3 @@
-# UNSPLIT_FILE="preprocess/subset/subset_1.json"
-# PATH="features"
-
 # python3 -u train_models.py ../too_big_for_git/features/currently_used/full_dataset/speaker_normalised/full_dataset_Functional_normalised ../too_big_for_git/models/Functional/full_dataset/speaker_normalised/ALC_combo0_full_dataset_Functional_normalised.pt Functional '{"lr":0.0001,"layers":[64,32,16,8,4],"dropout":0,"optim":"adam","bn":"True","batch_size":5,"num_epochs":10,"activation":"sigmoid"}'
 # python3 -u train_models.py ../too_big_for_git/features/currently_used/full_dataset/speaker_normalised/full_dataset_Functional_normalised ../too_big_for_git/models/Functional/full_dataset/speaker_normalised/ALC_combo1_full_dataset_Functional_normalised.pt Functional '{"lr":0.0001,"layers":[32],"dropout":0,"optim":"adam","bn":"True","batch_size":5,"num_epochs":10,"activation":"sigmoid"}'
 # python3 -u train_models.py ../too_big_for_git/features/currently_used/full_dataset/speaker_normalised/full_dataset_Functional_normalised ../too_big_for_git/models/Functional/full_dataset/speaker_normalised/ALC_combo2_full_dataset_Functional_normalised.pt Functional '{"lr":0.0001,"layers":[64,16,4],"dropout":0,"optim":"adam","bn":"True","batch_size":5,"num_epochs":10,"activation":"sigmoid"}'
