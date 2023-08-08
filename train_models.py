@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura & Francesca
+# =============================================================================
+"""This file contains the train loop of the intoxication detection models"""
+# =============================================================================
+# Imports
+# =============================================================================
 import json, os, random, torch, sys, time, argparse, copy, re
 import numpy as np
 import matplotlib.pyplot as plt

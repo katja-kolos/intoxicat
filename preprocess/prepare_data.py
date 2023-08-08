@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura
+# =============================================================================
+"""This file contains functions that can be used to prepare the data for further processing in different ways"""
+# =============================================================================
+# Imports
+# =============================================================================
 import pandas as pd
 import sys, json, os, random
 from sklearn.model_selection import train_test_split
@@ -83,6 +92,7 @@ def check_for_valid_file(files, file, path):
 
 
 def gather_metadata(meta_data, annotation_dict, file_annotations, file_path):
+# gather all meta data that is annotated in ALC for a specific audio file
 
     if meta_data != 'n':
         items = annotation_dict['levels'][0]['items']
@@ -96,7 +106,8 @@ def gather_metadata(meta_data, annotation_dict, file_annotations, file_path):
 
 
 def gather_word_transcriptions(annotation_dict, file_annotations, file_path):
-    
+# gather the annotated word transcriptions for a specific audio file
+
     items = annotation_dict['levels'][1]['items']
 
     word_list, transcription_list = [], []
@@ -115,6 +126,7 @@ def gather_word_transcriptions(annotation_dict, file_annotations, file_path):
 
 
 def gather_phonetic_transcription(annotation_dict, file_annotations, file_path):
+# gather the annotated phonetic transcriptions for a specific audio file
 
     items = annotation_dict['levels'][2]['items']
 
@@ -132,6 +144,7 @@ def gather_phonetic_transcription(annotation_dict, file_annotations, file_path):
 
 
 def add_table_metadata(table_file):
+# gather meta data that is only documented in ALC's speaker table 
 
     with open(table_file, 'r') as tf:
         table_lines = tf.readlines()
@@ -148,6 +161,7 @@ def add_table_metadata(table_file):
     
 
 def create_toy_dataset(annotation_file, feature_files):
+# create toy dataset for preliminary experiments
 
     df = pd.read_json(annotation_file, orient='index')
     train, test = train_test_split(df, test_size=0.01)
@@ -217,6 +231,7 @@ def split_dataset_into_splits(path_to_dataset, func_or_lld, out_path):
 
 if __name__ == "__main__":
 
+    # TODO: add argparse
     # command:
     # python3 prepare_data.py <path_to_directory> <basic_features> <annotation_type> <output_name> (meta_data=<meta_name> (<table_name>))
 

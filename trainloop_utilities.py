@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura
+# =============================================================================
+"""This file contains some functions that are used in the training loop"""
+# =============================================================================
+# Imports
+# =============================================================================
 import json, os, random, torch, sys, time, argparse, copy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,12 +17,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
 from torch.optim.lr_scheduler import _LRScheduler
-
-sys.path.append('preprocess/')
-from prepare_data import split_dataset_into_splits
-
-sys.path.append('evaluation/')
-from intoxicat_evaluation import *
+from preprocess.prepare_data import split_dataset_into_splits
+from evaluation.intoxicat_evaluation import *
 
 
 # code from https://github.com/DigitalPhonetics/IMS-Toucan/blob/ToucanTTS/Utility/WarmupScheduler.py
@@ -44,6 +49,7 @@ class ToucanWarmupScheduler(_LRScheduler):
 
 
 def plot_confusion_matrix(targets, predictions, model_name):
+# plot a confusion matrix of the models' predictions
 
     targets = torch.argmax(targets, dim=1)
     predictions = torch.argmax(predictions, dim=1)

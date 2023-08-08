@@ -1,6 +1,19 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Francesca & Laura
+# =============================================================================
+"""This file contains functions that can be used to evaluate the predictions of the intoxication detection models"""
+# =============================================================================
+# Imports
+# =============================================================================
 import numpy as numpy
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# --------------------------------------------------------------------------------------------
+# author: Francesca
+
 
 # How intoxication is labeled 
 # ground_truth_labels = ["a", "na", "cna"]

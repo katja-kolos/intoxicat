@@ -1,9 +1,19 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura
+# =============================================================================
+"""This file contains code to apply global speaker normalisation on the ALC data"""
+# =============================================================================
+# Imports
+# =============================================================================
 import pandas as pd
 import sys, json, os, random, argparse
 from scipy.stats import zscore
 
 
 def get_speaker_dict(file_dict):
+# create dictionary that contains every speaker as a key and lists their audio files in the value 
 
     speaker_dict = {}
     for audio_file, audio_annos in file_dict.items():
@@ -16,6 +26,7 @@ def get_speaker_dict(file_dict):
 
 
 def global_z_normalization(file_name, out_file, lld):
+# apply global speaker normalisation on the ALC data
 
     with open(file_name, 'r') as fn:
         file_dict = json.load(fn)
@@ -26,13 +37,12 @@ def global_z_normalization(file_name, out_file, lld):
         data_frames = []
         for audio_file in audio_files:
             data_frames.append(pd.DataFrame({**file_dict[audio_file]['features'], 'file_name': audio_file}))
-            # print(pd.DataFrame({**file_dict[audio_file]['features'], 'file_name': audio_file}))        
-            # exit()
 
         concatenated_df = pd.concat(data_frames)
         concatenated_df = concatenated_df.set_index('file_name')
 
         if len(data_frames) > 1:
+            # use pandas magic to normalise data
             normalized_df = concatenated_df.apply(zscore)
         else:
             normalized_df = concatenated_df

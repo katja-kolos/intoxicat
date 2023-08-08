@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura & Francesca
+# =============================================================================
+"""This file contains code that is used to build a Dataset class, as well as the collate function to costumise the DataLoader"""
+# =============================================================================
+# Imports
+# =============================================================================
 import json, os, random, torch, sys, time, argparse, copy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,6 +41,7 @@ def get_keep_features(func_or_lld):
     
 
 class Dataset:
+# define the dataset class that will be used by the models to access data
 
     def __init__(self, path_to_file, func_or_lld):
 

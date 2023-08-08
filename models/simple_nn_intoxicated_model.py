@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura & Francesca
+# =============================================================================
+"""This file contains the code for the Simple Neural Network in PyTorch"""
+# =============================================================================
+# Imports
+# =============================================================================
 import json, os, random, torch, sys, time, argparse, copy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,26 +79,22 @@ class Simple_Neural_Network(nn.Module):
                 batch_norm = self.batch_norms[i]
                 input_linear = batch_norm(input_linear)
             input_linear_activation = self.activation(input_linear)
-            # print(f'Output after Linear Layer {i}: {input_linear_activation}')
-
         # put output from linear layer through linear activation activation function and put the result through our output layer
         # the output layer maps the representation of the linear layer to the classes that we want to choose from
         # output_fully_connected_layer_activation = self.activation(output_fully_connected_layer)
         output_fully_connected_layer_activation = input_linear_activation
-        # print(f'Output after another activation: {output_fully_connected_layer_activation}')
         
         final_output_wo_softmax = self.output_layer(output_fully_connected_layer_activation)
-        # print(f'Output after output layer: {final_output_wo_softmax}')
 
         if bn:
             last_batch_norm = self.batch_norms[-1]
             final_output_wo_softmax = last_batch_norm(final_output_wo_softmax)
         # add softmax function
         final_output = self.softmax(final_output_wo_softmax)
-        # print(f'Final output: {final_output}')
 
         return final_output
 
 
     def store_loss(self, loss):
+    # this function makes it possible to store the loss values in the model
         self.loss_curve.append(loss) 

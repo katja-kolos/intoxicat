@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura
+# =============================================================================
+"""This file contains code to get interesting statistics from the meta data annotation file that is associated with the ALC data"""
+# =============================================================================
+# Imports
+# =============================================================================
 import json
 import matplotlib.pyplot as plt
 import numpy as np

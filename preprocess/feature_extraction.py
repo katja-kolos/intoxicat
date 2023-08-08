@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Created By  : Laura
+# =============================================================================
+"""This file contains the code to extract features from the ALC data"""
+# =============================================================================
+# Imports
+# =============================================================================
 import os, json, sys
 import parselmouth
 import audiofile
@@ -8,47 +17,14 @@ sys.path.append('..')
 from basics import read_json
 
 
-def extract_features(audiofile):
-
-    features = {}
-    snd = parselmouth.Sound(audiofile)
-    pitch = snd.to_pitch().selected_array['frequency']
-    intensity = snd.to_intensity()
-    formants = snd.to_formant_burg(max_number_of_formants=3)
-
-    mfcc = snd.to_mfcc(number_of_coefficients=12).to_array()
-
-    for el in mfcc:
-        print(el)
-
-    f1, f2, f3 = [], [], []
-
-    for t in formants.ts():
-        if intensity.get_value(t) > 0:
-            f1.append(formants.get_value_at_time(1, t))
-            f2.append(formants.get_value_at_time(2, t))
-            f3.append(formants.get_value_at_time(3, t))
-        else:
-            f1.append(np.nan)
-            f2.append(np.nan)
-            f3.append(np.nan)
-
-    print(mfcc)
-    features['pitch'] = pitch
-    features['intensity'] = intensity.values
-
-    # print(pitch)
-
-    return features
-
-
 def extract_features_opensmile(annotation_json, lld_json_name, functionals_json_name):
+# extract both Functional and LLD features from audio files using opensmile
 
     json_lld = {}
     json_functionals = {}
 
     annotation_file = read_json(annotation_json)
-    # acces every file
+    # access every file
     for file, meta_data in annotation_file.items():
 
         print(file)
