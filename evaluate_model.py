@@ -1,15 +1,18 @@
-import argparse, sys, torch, json, re
+import argparse
+import re
+import torch
+import json
+import re
 import numpy as np
 
 from trainloop_utilities import *
-from basics import *
+from utils import *
 
 from preprocess.data_utilities import Dataset, collate_costum
 
 from evaluation.intoxicat_evaluation import *
 
 from models.lstm_intoxicated_model import LSTM_Model
-from models.simple_nn_intoxicated_model import Simple_Neural_Network
 
 
 parser = argparse.ArgumentParser(description='Evaluate a trained model.')

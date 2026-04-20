@@ -7,17 +7,10 @@
 # =============================================================================
 # Imports
 # =============================================================================
-import json, os, random, torch, sys, time, argparse, copy
-import numpy as np
+import torch
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 from sklearn import metrics 
-from torch.utils.data import Dataset
-import torch.nn.functional as F
-import torch.nn as nn
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
 from torch.optim.lr_scheduler import _LRScheduler
-from preprocess.prepare_data import split_dataset_into_splits
 from evaluation.intoxicat_evaluation import *
 
 
