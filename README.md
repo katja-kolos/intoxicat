@@ -1,7 +1,7 @@
 # Intoxicat: A Project for Identifying Intoxicated Speech
 
-This project was created for the course "Computational Linguistics Team Laboratory: Phonetics" at the IMS in Stuttgart.
-In this project, we tackled the task of intoxication detection using both a simple neural network and a LSTM network and applying different preprocessing techniques such as global speaker normalization on speech data from LMU's Alcohol Language Corpus (ALC).
+This project was created for the course "Computational Linguistics Team Laboratory: Phonetics" at the [IMS](https://www.ims.uni-stuttgart.de/) in Stuttgart.
+In this project, we tackled the task of intoxication detection using both a simple neural network and a LSTM network and applying different preprocessing techniques such as global speaker normalization on speech data from LMU's [Alcohol Language Corpus (ALC)](https://www.en.phonetik.uni-muenchen.de/research/completed_projects/alc.html).
 
 This repo contains code for:
 
@@ -13,21 +13,15 @@ This repo contains code for:
 - training two types of neural models (namely a simple neural network and an LSTM network)
 - testing and analysing the results of the models
 
-Authors: Ekatarina Kolos & Laura Zeidler (further including some code from Francesca Carlon)
+Authors: Ekaterina Kolos & Laura Zeidler (further including some code from Francesca Carlon)
 
 ## Installation of Requirements
 
-Simply install required packages by typing.
+Simply install required packages by typing:
 
 ```
 pip install -r requirements.txt
 ```
-
-## Existing Subsets, Models and Results
-
-Already created subsets of the data as well as already existing models can be found outside of this repository (for storage reasons) in the folder `/mount/arbeitsdaten/studenten1/team-lab-phonetics/2023/student_directories/zeidler/too_big_for_git/(features|models)`
-
-Already obtained results as well as the documentation of hyperparameter combinations can be found under `parameters_and_results`.
 
 ## Training the Models
 
