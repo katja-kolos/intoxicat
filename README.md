@@ -1,8 +1,9 @@
 # Intoxicat: A Project for Identifying Intoxicated Speech
 
 This project was created for the course "Computational Linguistics Team Laboratory: Phonetics" at the IMS in Stuttgart.
+In this project, we tackled the task of intoxication detection using both a simple neural network and a LSTM network and applying different preprocessing techniques such as global speaker normalization on speech data from LMU's Alcohol Language Corpus (ALC).
 
-It contains code for:
+This repo contains code for:
 
 - preprocessing data from the ALC dataset
 - analysing the data based on given meta data annotations
